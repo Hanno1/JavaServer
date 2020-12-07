@@ -16,9 +16,12 @@ public class ClientStart extends Thread {
 			new ClientLogin(printerOut, frame);
 			
 			String serverInput; // Here we check the userInput and send it to the server
+			int i = 0;
 			while ((serverInput = in.readLine()) != null) {
-				if (serverInput.contentEquals("!quit")) { frame.writeOut(serverInput); break; }
+				System.out.println(i);
+				if (serverInput.contentEquals("!close")) { frame.writeOut(serverInput); break; }
 				frame.writeOut(serverInput);
+				i++;
 			}
 			System.out.println("The connection to the server was shut down!");
 			client.close();

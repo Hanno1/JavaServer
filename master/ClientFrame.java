@@ -116,10 +116,10 @@ public class ClientFrame extends JFrame implements ActionListener {
 					@Override
 			        public void run() {
 						if (insert.getText().contentEquals("")) {}
-							else {
-								out.println(insert.getText());
-								insert.setText(null);
-							}
+						else {
+							out.println(insert.getText());
+							insert.setText(null);
+						}
 			        }
 			    });
 			    t.start();
@@ -152,7 +152,8 @@ public class ClientFrame extends JFrame implements ActionListener {
 					outputPanel.append(line + "\n");
 				}
 			}
-		}); t.start();
+		});
+		t.start();
 	}
 
 	@Override

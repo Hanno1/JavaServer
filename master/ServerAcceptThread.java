@@ -9,88 +9,35 @@ public class ServerAcceptThread extends Thread implements Runnable {
 	
 	private boolean exit = false;
 	private ServerSocket serverMain;
-	private ServerManager worker;
 	
-	private ArrayList<ServerClientThread> allClients = new ArrayList<>();
-	private ArrayList<ServerClientThread> activeClientList = new ArrayList<>();
+	private ArrayList<ServerClientThread> allClients;
+	private ArrayList<ServerClientThread> activeClientList;
 	
 	public ServerAcceptThread(int port) throws IOException{
 		this.serverMain = new ServerSocket(port);
+		this.allClients = new ArrayList<ServerClientThread>();
+		this.activeClientList = new ArrayList<ServerClientThread>();
 	}
 	
-	public String login(ServerClientThread t) {
-		String name = t.getUsername();
-		String password = t.getUserpassword();
-		String result = "Welcome " + name;
-		boolean exist = false;
-		for (ServerClientThread clientThread : allClients) {
-			if (clientThread.getUsername().contentEquals(name)) {
-				if (clientThread.getUserpassword() == password) {
-					sendToAllLogin(name);
-					result = "Welcome back " + name;
-					exist = true;
-					activeClientList.add(t);
-					break;
-				}
-				else {
-					result = null;
-					exist = true;
-					break;
-				}
-			}
-		}
-		if (exist == false) {
-			sendToAllLogin(name);
-			allClients.add(t);
-			activeClientList.add(t);
-		}
-		sendUsers();
-		return result;
+	public ArrayList<ServerClientThread> getAllUsers() {
+		return allClients;
 	}
 	
-	public void removeUser(String name) {
-		int index = 0;
-		for (ServerClientThread user : activeClientList) {
-			if (user.getUsername().contentEquals(name)) {
-				activeClientList.remove(index);
-				break;
-			}
-			index++;
-		}
-		sendUsers();
+	public ArrayList<ServerClientThread> getAllActiveUsers() {
+		return activeClientList;
 	}
 	
-	public void sendUsers() {
-		String line = "!online";
-		for (ServerClientThread user : activeClientList) {
-			line = line + "," + user.getUsername() + " (" + user.getNickname() + ")";
-		}
-		for (ServerClientThread user : activeClientList) {
-			user.sendMessage(line);
-		}
+	public void setAllUsers(ArrayList<ServerClientThread> allNewClients) {
+		this.allClients = allNewClients;
 	}
 	
-	public void sendToAll(String name, String message) {
-		for (ServerClientThread user : activeClientList) {
-			user.out.println(name + ": " + message);
-//			user.sendMessage(name + ": " + message);
-		}
-	}
-	
-	public void sendToAllLogin(String name) {
-		for (ServerClientThread user : activeClientList) {
-			user.out.println(name + " just logged in");
-//			user.sendMessage(name + " just logged in.");
-		}
+	public void setAllActiveUsers(ArrayList<ServerClientThread> activeClients) {
+		this.activeClientList = activeClients;
 	}
 	
 	@Override
 	public void run() {
 		try {
-			// start Server Manage as a Thread
-			// server managment does everything, like writing and stuff
-			// so this is free to accept more clients
-			worker = new ServerManager();
 			while (!exit) {
 				System.out.println("connecting...");
 				Socket client = serverMain.accept();
