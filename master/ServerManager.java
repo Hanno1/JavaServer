@@ -1,21 +1,10 @@
 package master;
 
-import java.io.*;
-import java.net.*;
-import java.util.*;
-
-public class ServerAcceptThread extends Thread implements Runnable {
-	private final static int port = 1244;
-	
-	private boolean exit = false;
-	private ServerSocket serverMain;
-	private ServerManager worker;
-	
+public class ServerManager {
 	private ArrayList<ServerClientThread> allClients = new ArrayList<>();
 	private ArrayList<ServerClientThread> activeClientList = new ArrayList<>();
 	
-	public ServerAcceptThread(int port) throws IOException{
-		this.serverMain = new ServerSocket(port);
+	public ServerManager() {
 	}
 	
 	public String login(ServerClientThread t) {
@@ -82,29 +71,5 @@ public class ServerAcceptThread extends Thread implements Runnable {
 			user.out.println(name + " just logged in");
 //			user.sendMessage(name + " just logged in.");
 		}
-	}
-	
-	@Override
-	public void run() {
-		try {
-			// start Server Manage as a Thread
-			// server managment does everything, like writing and stuff
-			// so this is free to accept more clients
-			worker = new ServerManager();
-			while (!exit) {
-				System.out.println("connecting...");
-				Socket client = serverMain.accept();
-				System.out.println(client + " is now connected!");
-
-				Thread userThread = new Thread(new ServerClientThread(this, client));
-				userThread.start();
-			}
-		} catch (IOException e) { System.out.println("Fehler in run, ServerAccept Thread"); }
-	}
-
-	public static void main(String[] args) throws IOException {
-		ServerAcceptThread acceptingServer = new ServerAcceptThread(port);
-		Thread accept = new Thread(acceptingServer);
-		accept.start();
 	}
 }

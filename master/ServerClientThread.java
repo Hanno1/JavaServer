@@ -50,10 +50,7 @@ public class ServerClientThread extends Thread implements Runnable {
 			out.println("Username does allready exist or incorrect Password!");
 			this.close(); 
 		}
-		else { 
-			out.println(result);
-			server.sendToAllLogin(this.name);
-		}
+		else { out.println(result); }
 	}
 	
 	@Override
