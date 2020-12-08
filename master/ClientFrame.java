@@ -140,16 +140,27 @@ public class ClientFrame extends JFrame implements ActionListener {
 		Thread t = new Thread(new Runnable() {
 			@Override
 			public void run() {
+				System.out.println("0");
 				if (line.contentEquals("")) {}
-				if (line.length() > 7 && line.substring(0, 7).contentEquals("!online")) {
-					String[] names = line.substring(8).split(",");
-					users.setText(null);
-					for (String name : names) {
-						users.append(name + "\n");
-					}
-				}
 				else {
-					outputPanel.append(line + "\n");
+					if (line.length() > 7 && line.substring(0, 7).contentEquals("!online")) {
+						System.out.println("1");
+						String[] names = line.substring(8).split(",");
+						users.setText(null);
+						for (String name : names) {
+							System.out.println(name);
+							try {
+								Thread.sleep(500);
+							} catch (InterruptedException e) {
+								e.printStackTrace();
+							}
+							users.append(name + "\n");
+						}
+						System.out.println("3");
+					}
+					else {
+						outputPanel.append(line + "\n");
+					}
 				}
 			}
 		});

@@ -54,7 +54,12 @@ public class ServerClientThread extends Thread implements Runnable {
 		if (exist == false) {
 			allClients.add(this);
 		}
-//		sendToAll(name + " just logged in");
+		sendToAll(name + " just logged in");
+		try {
+			Thread.sleep(300);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
 		activeClients.add(this);
 		
 		server.setAllUsers(allClients);
@@ -78,9 +83,14 @@ public class ServerClientThread extends Thread implements Runnable {
 	      			}
 	      			index++;
 	      		}
-	      		server.setAllActiveUsers(activeClients);
-	      		sendToAll(name + " just logged Out");
 	      		sendOnline();
+	      		server.setAllActiveUsers(activeClients);
+	      		try {
+	    			Thread.sleep(300);
+	    		} catch (InterruptedException e) {
+	    			e.printStackTrace();
+	    		}	      		
+	      		sendToAll(name + " just logged Out");
 	        }
 	    });
 	    t.start();
@@ -134,6 +144,11 @@ public class ServerClientThread extends Thread implements Runnable {
 			@Override
 	        public void run() {
 				String result = login();
+				try {
+					Thread.sleep(300);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
 				if (result == null) {
 					out.println("Username does allready exist or incorrect Password!");
 					out.println("!close");
