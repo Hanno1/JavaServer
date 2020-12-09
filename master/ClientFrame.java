@@ -6,7 +6,7 @@ import java.io.PrintWriter;
 
 import javax.swing.*;
 
-public class ClientFrame extends JFrame implements ActionListener {
+public class ClientFrame extends JFrame implements ActionListener, KeyListener {
 	// given outputStream to the Server
 	PrintWriter out;
 	// define some Panel Variables
@@ -25,6 +25,9 @@ public class ClientFrame extends JFrame implements ActionListener {
 	JLabel userLabel, passwordLabel, changeName;
 		
 	JTextArea users = new JTextArea();
+	
+	JList<String> onlineUsers;
+	DefaultListModel<String> listModelOnline;
 			
 	public ClientFrame(PrintWriter printerOut) {
 		/* Constructor for the chat frame. 
@@ -64,6 +67,7 @@ public class ClientFrame extends JFrame implements ActionListener {
 		// create insert Field
 		insertNickname = new JTextField(10);
 		insertNickname.setBorder(BorderFactory.createTitledBorder("insertNickname"));
+		insertNickname.addKeyListener(this);
 		// create Button
 		sendNickname = new JButton("Change Name");
 		sendNickname.addActionListener(new ActionListener() {
@@ -81,12 +85,12 @@ public class ClientFrame extends JFrame implements ActionListener {
 		nickname.add(sendNickname, BorderLayout.EAST);
 		nickname.setBorder(BorderFactory.createTitledBorder("Nickname panel"));
 		// add textArea for all users -- will be a list later on
-		users.setLineWrap(true);
-		users.setEditable(false);
-		users.setBorder(BorderFactory.createTitledBorder("all Users online"));
+		listModelOnline = new DefaultListModel<String>();
+		onlineUsers = new JList<String>(listModelOnline);
+		onlineUsers.setBorder(BorderFactory.createTitledBorder("all Users online"));
 		// add nickname-Panel to rightPanel
 		rightPanel.add(nickname, BorderLayout.NORTH);
-		rightPanel.add(users, BorderLayout.CENTER);
+		rightPanel.add(onlineUsers, BorderLayout.CENTER);
 	}
 	
 	private void createLeftPanel() {
@@ -107,6 +111,7 @@ public class ClientFrame extends JFrame implements ActionListener {
 		// text Field insert
 		insert = new JTextField(19);
 		insert.setBorder(BorderFactory.createTitledBorder("Insert"));
+		insert.addKeyListener(this);
 		// Sending Button
 		sendMessage = new JButton("Send Message");
 		sendMessage.addActionListener(new ActionListener() {
@@ -116,10 +121,11 @@ public class ClientFrame extends JFrame implements ActionListener {
 					@Override
 			        public void run() {
 						if (insert.getText().contentEquals("")) {}
+						if (insert.getText().substring(0, 1).contentEquals("!")) {}
 						else {
 							out.println(insert.getText());
-							insert.setText(null);
 						}
+						insert.setText(null);
 			        }
 			    });
 			    t.start();
@@ -140,23 +146,11 @@ public class ClientFrame extends JFrame implements ActionListener {
 		Thread t = new Thread(new Runnable() {
 			@Override
 			public void run() {
-				System.out.println("0");
+				System.out.println("line:" + line);
 				if (line.contentEquals("")) {}
 				else {
-					if (line.length() > 7 && line.substring(0, 7).contentEquals("!online")) {
-						System.out.println("1");
-						String[] names = line.substring(8).split(",");
-						users.setText(null);
-						for (String name : names) {
-							System.out.println(name);
-							try {
-								Thread.sleep(500);
-							} catch (InterruptedException e) {
-								e.printStackTrace();
-							}
-							users.append(name + "\n");
-						}
-						System.out.println("3");
+					if (line.length() > 9 && line.substring(0, 7).contentEquals("!online")) {
+						updateOnline(line);
 					}
 					else {
 						outputPanel.append(line + "\n");
@@ -166,7 +160,72 @@ public class ClientFrame extends JFrame implements ActionListener {
 		});
 		t.start();
 	}
+	
+	private void updateOnline(String line) {
+		String user = line.substring(8);
+		String action = line.substring(7,8);
+		if (action.contentEquals("e")) {
+			// we are new so we need to write out everything
+			String[] names = user.split(",");
+			for (String name : names) {
+				listModelOnline.addElement(name);
+			}
+		}
+		else {
+			if (action.contentEquals("r")) {
+				// remove user
+				try {
+					listModelOnline.removeElement(user);
+				}
+				finally {}
+			}
+			else {
+				if (action.contentEquals("a")) {
+					// add user
+					listModelOnline.addElement(user);
+				}
+				else {
+					// change nickname
+					try {
+						String[] newName = user.split("%");
+						String newNickname = newName[0];
+						for (int i = 0; i < listModelOnline.size(); i++) {
+							if (listModelOnline.getElementAt(i).contentEquals(newName[1])) {
+								listModelOnline.setElementAt(newNickname, i);
+								break;
+							}
+						}
+					}
+					finally {}
+				}
+			}
+		}
+	}
 
 	@Override
 	public void actionPerformed(ActionEvent e) {}
+
+	@Override
+	public void keyTyped(KeyEvent e) {
+	}
+
+	@Override
+	public void keyPressed(KeyEvent e) {
+		if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+			if (e.getSource() == insert) {
+				out.println(insert.getText());
+				insert.setText(null);
+			}
+			if (e.getSource() == insertNickname) {
+				out.println("!nickname" + insertNickname.getText());
+				insertNickname.setText(null);
+			}
+		}
+	}
+
+	@Override
+	public void keyReleased(KeyEvent e) {
+		// TODO Auto-generated method stub
+		
+	}
 }

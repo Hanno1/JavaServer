@@ -65,17 +65,20 @@ public class ServerClientThread extends Thread implements Runnable {
 		server.setAllUsers(allClients);
 		server.setAllActiveUsers(activeClients);
 		
-		sendOnline();
+		sendOnline("all", null);
+		sendOnline("a", null);
 		
 		return result;
 	}
 	
-	public void removeUser(String name) {
+	public void removeUser() {
 		Thread t = new Thread(new Runnable() {
 			@Override
 			public void run() {
 	        	ArrayList<ServerClientThread> activeClients = server.getAllActiveUsers();
 	        	int index = 0;
+      			System.out.println(activeClients);
+
 	      		for (ServerClientThread user : activeClients) {
 	      			if (user.getUsername().contentEquals(name)) {
 	      				activeClients.remove(index);
@@ -83,7 +86,7 @@ public class ServerClientThread extends Thread implements Runnable {
 	      			}
 	      			index++;
 	      		}
-	      		sendOnline();
+	      		sendOnline("r", null);
 	      		server.setAllActiveUsers(activeClients);
 	      		try {
 	    			Thread.sleep(300);
@@ -96,17 +99,43 @@ public class ServerClientThread extends Thread implements Runnable {
 	    t.start();
 	}
 	
-	public void sendOnline() {
+	public void sendOnline(String action, String line) {
+		/*
+		 * if action == remove: send !onlineruser so we can just removee the user
+		 * else send !onlineauser to add and !onlinecuser to change nickname
+		 * if action == all, we need to send all users (for new user)
+		 */
 		Thread t = new Thread(new Runnable() {
 			@Override
 			public void run() {
-				ArrayList<ServerClientThread> activeClients = server.getAllActiveUsers();
-				String line = "!online";
-				for (ServerClientThread user : activeClients) {
-					line = line + "," + user.getUsername() + " (" + user.getNickname() + ")";
+				if (action.contentEquals("all")) {
+					ArrayList<ServerClientThread> activeClients = server.getAllActiveUsers();
+					String newLine = "!onlinee";
+					for (ServerClientThread client : activeClients) {
+						newLine = newLine + "," + client.getUsername() + " (" + client.getNickname() + ")";
+					}
+					sendMessage(newLine);
 				}
-				for (ServerClientThread user : activeClients) {
-					user.sendMessage(line);
+				else {
+					if (action.contentEquals("a") || action.contentEquals("r")) {
+						ArrayList<ServerClientThread> activeClients = server.getAllActiveUsers();
+						String newLine = "!online" + action + name + " (" + nickname + ")";
+						// dont send message to myself or i get a problem
+						for (ServerClientThread user : activeClients) {
+							if (!user.getUsername().contentEquals(name)) {
+								user.sendMessage(newLine);
+							}
+						}
+					}
+					else {
+						ArrayList<ServerClientThread> activeClients = server.getAllActiveUsers();
+						String newLine = "!onlinec" + name + " (" + line.substring(9) + ")" +
+											"%" + name + " (" + nickname + ")";
+						nickname = line.substring(9);
+						for (ServerClientThread user : activeClients) {
+							user.sendMessage(newLine);
+						}
+					}
 				}
 			}
 		});
@@ -171,11 +200,10 @@ public class ServerClientThread extends Thread implements Runnable {
 			String line;
 			while (!exit) {
 				line = in.readLine();
-				if (line == null) { removeUser(this.name); break; }
+				if (line == null) { removeUser(); break; }
 				else {
 					if (line.length() > 9 && line.substring(0, 9).contentEquals("!nickname")) {
-						nickname = line.substring(9);
-						sendOnline();
+						sendOnline("c", line);
 					}
 					else { this.sendToAll(nickname, line); }
 				}
@@ -185,7 +213,6 @@ public class ServerClientThread extends Thread implements Runnable {
 		catch (IOException e) {
 			System.out.println(this.name + " was violently closed.");
 			try {
-				removeUser(this.name);
 				this.close();
 			} catch (IOException e1) {
 				e1.printStackTrace();
@@ -194,6 +221,7 @@ public class ServerClientThread extends Thread implements Runnable {
 	}
 	
 	public void close() throws IOException {
+		removeUser();
 		exit = true;
 		in.close();
 		client.close();
