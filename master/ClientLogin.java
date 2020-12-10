@@ -52,50 +52,45 @@ public class ClientLogin extends JFrame implements ActionListener, KeyListener {
 		mainPanel.add(password, BorderLayout.AFTER_LAST_LINE);
 		mainPanel.add(login, BorderLayout.SOUTH);
 	}
+	
+	private void checkAndSend() {
+		if (name.getText().contentEquals("")) {
+			JOptionPane.showMessageDialog(this,
+					"'Name' can not be empty!",
+					"WARNING!!!",
+					JOptionPane.WARNING_MESSAGE);
+		} 
+		else {
+			if (word.getText().contentEquals("")) {
+				JOptionPane.showMessageDialog(this,
+						"'Password' can not be empty!",
+						"WARNING!!!",
+						JOptionPane.WARNING_MESSAGE);
+			}
+			else {
+				out.println(name.getText());
+				out.println(word.getText());
+				this.dispose();
+				frame.setVisible(true);
+			}
+		}
+	}
 
 	@Override
 	public void actionPerformed(ActionEvent e) {
-		out.println(name.getText());
-		out.println(word.getText());
-		frame.setVisible(true);
-		this.dispose();
+		checkAndSend();
 	}
 
 	@Override
-	public void keyTyped(KeyEvent e) {
-		// TODO Auto-generated method stub
-	}
+	public void keyTyped(KeyEvent e) {}
 
 	@Override
 	public void keyPressed(KeyEvent e) {
 		if (e.getKeyCode() == KeyEvent.VK_ENTER) {
-			if (name.getText().contentEquals("")) {
-				JOptionPane.showMessageDialog(this,
-						"'Name' can not be empty!",
-						"WARNING!!!",
-						JOptionPane.WARNING_MESSAGE);
-			} 
-			else {
-				if (word.getText().contentEquals("")) {
-					JOptionPane.showMessageDialog(this,
-							"'Password' can not be empty!",
-							"WARNING!!!",
-							JOptionPane.WARNING_MESSAGE);
-				}
-				else {
-					out.println(name.getText());
-					out.println(word.getText());
-					this.dispose();
-					frame.setVisible(true);
-				}
-			}
+			checkAndSend();
 		}
-		
 	}
 
 	@Override
-	public void keyReleased(KeyEvent e) {
-		// TODO Auto-generated method stub
-		
-	}
+	public void keyReleased(KeyEvent e) {}
 }

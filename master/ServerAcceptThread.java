@@ -13,6 +13,8 @@ public class ServerAcceptThread extends Thread implements Runnable {
 	private ArrayList<ServerClientThread> allClients;
 	private ArrayList<ServerClientThread> activeClientList;
 	
+	private ArrayList<Chatroom> chatrooms;
+	
 	public ServerAcceptThread(int port) throws IOException{
 		this.serverMain = new ServerSocket(port);
 		this.allClients = new ArrayList<ServerClientThread>();
@@ -27,6 +29,15 @@ public class ServerAcceptThread extends Thread implements Runnable {
 		return activeClientList;
 	}
 	
+	public ArrayList<Chatroom> getRooms(){
+		return chatrooms;
+	}
+	
+	public void addRoom(String name) {
+		Chatroom newRoom = new Chatroom(this, name);
+		chatrooms.add(newRoom);
+	}
+	
 	public void setAllUsers(ArrayList<ServerClientThread> allNewClients) {
 		this.allClients = allNewClients;
 	}
@@ -38,6 +49,9 @@ public class ServerAcceptThread extends Thread implements Runnable {
 	@Override
 	public void run() {
 		try {
+			chatrooms = new ArrayList<Chatroom>();
+			Chatroom main = new Chatroom(this, "main");
+			chatrooms.add(main);
 			while (!exit) {
 				System.out.println("connecting...");
 				Socket client = serverMain.accept();

@@ -14,6 +14,7 @@ public class ServerClientThread extends Thread implements Runnable {
 	private String nickname;
 	private PrintWriter out;
 	private BufferedReader in;
+	private Chatroom chatroom;
 	
 	public ServerClientThread(ServerAcceptThread server, Socket client) throws IOException {
 		this.server = server;
@@ -23,7 +24,12 @@ public class ServerClientThread extends Thread implements Runnable {
 		this.password = "";
 		this.out = new PrintWriter(client.getOutputStream(), true);
 		this.in = new BufferedReader(new InputStreamReader(client.getInputStream()));
+		this.chatroom = null;
 	}
+	
+	public Chatroom getRoom() { return this.chatroom; }
+	
+	public void setRoom(Chatroom room) { this.chatroom = room; }
 	
 	public String getUsername() { return this.name;	}
 	
@@ -54,7 +60,10 @@ public class ServerClientThread extends Thread implements Runnable {
 		if (exist == false) {
 			allClients.add(this);
 		}
-		sendToAll(name + " just logged in");
+		
+		sendToAllR(name + " just logged in", null);
+		joinRoom("main");
+		sendRooms("all", null);
 		try {
 			Thread.sleep(300);
 		} catch (InterruptedException e) {
@@ -63,12 +72,68 @@ public class ServerClientThread extends Thread implements Runnable {
 		activeClients.add(this);
 		
 		server.setAllUsers(allClients);
-		server.setAllActiveUsers(activeClients);
-		
-		sendOnline("all", null);
-		sendOnline("a", null);
-		
+		server.setAllActiveUsers(activeClients);		
 		return result;
+	}
+	
+	public void createRoom(String name) {
+		boolean exist = false;
+		ArrayList<Chatroom> rooms = server.getRooms();
+		for (Chatroom room : rooms) {
+			if (room.getName().contentEquals(name)) {
+				exist = true;
+				break;
+			}
+		}
+		if (!exist) {
+			server.addRoom(name);
+		}
+	}
+	
+	public void joinRoom(String name) {
+		ArrayList<Chatroom> rooms = server.getRooms();
+		for (Chatroom room : rooms) {
+			if (room.getName().contentEquals(name)) {
+				room.joinClient(this);
+				sendOnline("a", null, null);
+				sendOnline("all", null, null);
+				break;
+			}
+		}
+	}
+	
+	public void removeRoom(Chatroom room) {
+		Chatroom formerRoom = chatroom;
+		room.removeClient(this);
+		formerRoom.sendAll(name + " just left");
+		sendOnline("r", formerRoom, null);
+	}
+	
+	private void changeRoom(String newRoom) {
+		removeRoom(chatroom);		
+		joinRoom(newRoom);
+	}
+	
+	public void sendRooms(String action, String newRoom) {
+		if (action.contentEquals("all")) {
+			// send all rooms
+			String line = "!roome";
+			ArrayList<Chatroom> rooms = server.getRooms();
+			for (Chatroom room : rooms) {
+				line = line + "," + room.getName();
+			}
+			out.println(line);
+		}
+		else {
+			// send all Rooms
+			if (action.contentEquals("a")) {
+				String line = "!rooma" + newRoom;
+				ArrayList<ServerClientThread> activeClients = server.getAllActiveUsers();
+				for (ServerClientThread client : activeClients) {
+					client.out.println(line);
+				}
+			}
+		}
 	}
 	
 	public void removeUser() {
@@ -77,8 +142,6 @@ public class ServerClientThread extends Thread implements Runnable {
 			public void run() {
 	        	ArrayList<ServerClientThread> activeClients = server.getAllActiveUsers();
 	        	int index = 0;
-      			System.out.println(activeClients);
-
 	      		for (ServerClientThread user : activeClients) {
 	      			if (user.getUsername().contentEquals(name)) {
 	      				activeClients.remove(index);
@@ -86,54 +149,61 @@ public class ServerClientThread extends Thread implements Runnable {
 	      			}
 	      			index++;
 	      		}
-	      		sendOnline("r", null);
+	      		// remove User
+	      		Chatroom formerRoom = chatroom;
+	      		removeRoom(chatroom);
+	      		sendOnline("r", formerRoom, null);
+	      		// update every online list
 	      		server.setAllActiveUsers(activeClients);
 	      		try {
 	    			Thread.sleep(300);
 	    		} catch (InterruptedException e) {
 	    			e.printStackTrace();
 	    		}	      		
-	      		sendToAll(name + " just logged Out");
+	      		sendToAllR(name + " just logged Out", formerRoom);
 	        }
 	    });
 	    t.start();
 	}
 	
-	public void sendOnline(String action, String line) {
-		/*
-		 * if action == remove: send !onlineruser so we can just removee the user
-		 * else send !onlineauser to add and !onlinecuser to change nickname
-		 * if action == all, we need to send all users (for new user)
-		 */
+	public void sendOnline(String action, Chatroom room, String line) {
 		Thread t = new Thread(new Runnable() {
 			@Override
 			public void run() {
-				if (action.contentEquals("all")) {
-					ArrayList<ServerClientThread> activeClients = server.getAllActiveUsers();
-					String newLine = "!onlinee";
-					for (ServerClientThread client : activeClients) {
-						newLine = newLine + "," + client.getUsername() + " (" + client.getNickname() + ")";
+				if (action.contentEquals("r")) {
+					ArrayList<ServerClientThread> activeClients = room.getClients();
+					String newLine = "!onliner" + name + " (" + nickname + ")";
+					// dont send message to myself or i get double names
+					for (ServerClientThread user : activeClients) {
+						user.sendMessage(newLine);
 					}
-					sendMessage(newLine);
 				}
 				else {
-					if (action.contentEquals("a") || action.contentEquals("r")) {
-						ArrayList<ServerClientThread> activeClients = server.getAllActiveUsers();
-						String newLine = "!online" + action + name + " (" + nickname + ")";
-						// dont send message to myself or i get a problem
-						for (ServerClientThread user : activeClients) {
-							if (!user.getUsername().contentEquals(name)) {
-								user.sendMessage(newLine);
-							}
+					ArrayList<ServerClientThread> activeClients = chatroom.getClients();
+					if (action.contentEquals("all")) {
+						String newLine = "!onlinee";
+						for (ServerClientThread client : activeClients) {
+							newLine = newLine + "," + client.getUsername() + " (" + client.getNickname() + ")";
 						}
+						sendMessage(newLine);
 					}
 					else {
-						ArrayList<ServerClientThread> activeClients = server.getAllActiveUsers();
-						String newLine = "!onlinec" + name + " (" + line.substring(9) + ")" +
-											"%" + name + " (" + nickname + ")";
-						nickname = line.substring(9);
-						for (ServerClientThread user : activeClients) {
-							user.sendMessage(newLine);
+						if (action.contentEquals("a")) {
+							String newLine = "!onlinea" + name + " (" + nickname + ")";
+							// dont send message to myself or i get double names
+							for (ServerClientThread user : activeClients) {
+								if (!user.getUsername().contentEquals(name)) {
+									user.sendMessage(newLine);
+								}
+							}
+						}
+						else {
+							String newLine = "!onlinec" + name + " (" + line.substring(9) + ")" +
+												"%" + name + " (" + nickname + ")";
+							nickname = line.substring(9);
+							for (ServerClientThread user : activeClients) {
+								user.sendMessage(newLine);
+							}
 						}
 					}
 				}
@@ -142,13 +212,21 @@ public class ServerClientThread extends Thread implements Runnable {
 		t.start();
 	}
 	
-	public void sendToAll(String message) {
+	public void sendToAllR(String message, Chatroom room) {
 		Thread t = new Thread(new Runnable() {
 			@Override
 			public void run() {
-				ArrayList<ServerClientThread> activeClients = server.getAllActiveUsers();
-				for (ServerClientThread user : activeClients) {
-					user.sendMessage(message);
+				if (room != null) {
+					ArrayList<ServerClientThread> activeClients = room.getClients();
+					for (ServerClientThread user : activeClients) {
+						user.sendMessage(message);
+					}
+				}
+				else {
+					ArrayList<ServerClientThread> activeClients = chatroom.getClients();
+					for (ServerClientThread user : activeClients) {
+						user.sendMessage(message);
+					}
 				}
 			}
 		});
@@ -159,7 +237,7 @@ public class ServerClientThread extends Thread implements Runnable {
 		Thread t = new Thread(new Runnable() {
 			@Override
 			public void run() {
-				ArrayList<ServerClientThread> activeClients = server.getAllActiveUsers();
+				ArrayList<ServerClientThread> activeClients = chatroom.getClients();
 				for (ServerClientThread user : activeClients) {
 					user.sendMessage(name + ": " + message);
 				}
@@ -203,9 +281,25 @@ public class ServerClientThread extends Thread implements Runnable {
 				if (line == null) { removeUser(); break; }
 				else {
 					if (line.length() > 9 && line.substring(0, 9).contentEquals("!nickname")) {
-						sendOnline("c", line);
+						sendOnline("c", null, line);
 					}
-					else { this.sendToAll(nickname, line); }
+					else { 
+						if (line.length() > 6 && line.substring(0, 6).contentEquals("!rooma")) {
+							String newRoom = line.substring(6);
+							System.out.println(newRoom);
+							createRoom(newRoom);
+							sendRooms("a", newRoom);
+						}
+						else {
+							if (line.length() > 6 && line.substring(0, 6).contentEquals("!roomc")) {
+								changeRoom(line.substring(6));
+							}
+							else {
+								this.sendToAll(nickname, line);
+							}
+						}
+						
+					}
 				}
 			}
 			this.close(); 

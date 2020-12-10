@@ -5,12 +5,15 @@ import java.awt.event.*;
 import java.io.PrintWriter;
 
 import javax.swing.*;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 
 public class ClientFrame extends JFrame implements ActionListener, KeyListener {
 	// given outputStream to the Server
 	PrintWriter out;
+	ClientFrame frame;
 	// define some Panel Variables
-	JPanel finalPanel, leftPanel, rightPanel;
+	JPanel finalPanel, leftPanel, rightPanel, roomPanel;
 	JPanel rowPanel, nickname;
 	// Variables for login
 	JPanel mainPanel;
@@ -20,20 +23,21 @@ public class ClientFrame extends JFrame implements ActionListener, KeyListener {
 	JPasswordField passwordText;
 	JTextArea outputPanel;
 
-	JButton login, sendMessage, sendNickname;
+	JButton login, sendMessage, sendNickname, createRoom;
 		
 	JLabel userLabel, passwordLabel, changeName;
 		
 	JTextArea users = new JTextArea();
 	
-	JList<String> onlineUsers;
-	DefaultListModel<String> listModelOnline;
+	JList<String> onlineUsers, rooms;
+	DefaultListModel<String> listModelOnline, listModelRooms;
 			
 	public ClientFrame(PrintWriter printerOut) {
 		/* Constructor for the chat frame. 
 		 * The idea is to have a final Frame width a grid layout and inside are BorderLayouts
 		 * So its a stacking of different Layouts to get the prefered Layout */
 		this.out = printerOut;
+		ClientFrame frame = this;
 		
 		this.setVisible(false);
 		
@@ -47,8 +51,11 @@ public class ClientFrame extends JFrame implements ActionListener, KeyListener {
 		this.createLeftPanel();
 		rightPanel = new JPanel(new BorderLayout());
 		this.createRightPanel();
-
-		finalPanel.add(leftPanel, BorderLayout.WEST);
+		roomPanel = new JPanel(new BorderLayout());
+		this.createRoomPanel();
+		
+		finalPanel.add(roomPanel, BorderLayout.WEST);
+		finalPanel.add(leftPanel, BorderLayout.CENTER);
 		finalPanel.add(rightPanel, BorderLayout.EAST);
 
 		this.setLayout(new BorderLayout());
@@ -142,6 +149,38 @@ public class ClientFrame extends JFrame implements ActionListener, KeyListener {
 		leftPanel.setBorder(BorderFactory.createTitledBorder("left!"));
 	}
 	
+	private void createRoomPanel() {
+		JPanel chatRooms = new JPanel(new BorderLayout());
+		listModelRooms = new DefaultListModel<String>();
+		rooms = new JList<String>(listModelRooms);
+		rooms.setSelectedIndex(0);
+		rooms.addListSelectionListener(new ListSelectionListener() {
+            @Override
+            public void valueChanged(ListSelectionEvent e) {
+                if (e.getValueIsAdjusting()) {
+                	int index = rooms.getSelectedIndex();
+                	out.println("!roomc" + listModelRooms.get(index));
+                }
+            }
+        });
+		createRoom = new JButton("create new Room!");
+		createRoom.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				String name = JOptionPane.showInputDialog(frame, "New Chatroom name: ", "create Chatroom",
+						JOptionPane.QUESTION_MESSAGE);
+				if (name == null || name.contentEquals("")) {}
+				else {
+					out.println("!rooma" + name);
+				}
+			}
+		});
+		chatRooms.add(rooms);
+		chatRooms.add(createRoom, BorderLayout.SOUTH);
+		chatRooms.setVisible(true);
+		roomPanel.add(chatRooms, BorderLayout.CENTER);
+	}
+	
 	public void writeOut(String line) {
 		Thread t = new Thread(new Runnable() {
 			@Override
@@ -153,7 +192,14 @@ public class ClientFrame extends JFrame implements ActionListener, KeyListener {
 						updateOnline(line);
 					}
 					else {
-						outputPanel.append(line + "\n");
+						System.out.println("0");
+						if (line.length() > 5 && line.substring(0, 5).contentEquals("!room")) {
+							System.out.println("1");
+							updateRooms(line);
+						}
+						else {
+							outputPanel.append(line + "\n");
+						}
 					}
 				}
 			}
@@ -165,6 +211,8 @@ public class ClientFrame extends JFrame implements ActionListener, KeyListener {
 		String user = line.substring(8);
 		String action = line.substring(7,8);
 		if (action.contentEquals("e")) {
+			// first we need to reset
+			listModelOnline.removeAllElements();
 			// we are new so we need to write out everything
 			String[] names = user.split(",");
 			for (String name : names) {
@@ -198,6 +246,29 @@ public class ClientFrame extends JFrame implements ActionListener, KeyListener {
 					}
 					finally {}
 				}
+			}
+		}
+	}
+	
+	private void updateRooms(String line) {
+		boolean first = false;
+		if (listModelRooms.size() == 0) {
+			first = true;
+		}
+		if (line.substring(5, 6).contentEquals("e")) {
+			// first we need to reset the list
+			listModelRooms.removeAllElements();
+			String[] names = line.substring(7).split(",");
+			for (String name : names) {
+				listModelRooms.addElement(name);
+			}
+			if (first) {
+				rooms.setSelectedIndex(0);
+			}
+		}
+		else {
+			if (line.substring(5, 6).contentEquals("a")) {
+				listModelRooms.addElement(line.substring(6));
 			}
 		}
 	}
