@@ -59,10 +59,15 @@ public class ServerClientThread extends Thread implements Runnable {
 		// go through every existing client
 		for (ServerClientThread clientThread : allClients) {
 			if (clientThread.getUsername().contentEquals(name)) {
-				if (clientThread.getUserpassword() == password) {
+				if (clientThread.getUserpassword().contentEquals(password)) {
 					// if name and password match we write welcome back
 					result = "Welcome back " + name;
 					exist = true;
+					// if there is already a user with same name and password online
+					// we dont want this to work
+					for (ServerClientThread client : activeClients) {
+						if (client.getUsername().contentEquals(name)) { return "!exist"; }
+					}
 					break;
 				}
 				// password wrong or name does exist
@@ -195,6 +200,7 @@ public class ServerClientThread extends Thread implements Runnable {
 			public void run() {
 				// remove from active client list:
 	        	ArrayList<ServerClientThread> activeClients = server.getAllActiveUsers();
+	        	System.out.println(activeClients);
 	        	int index = 0;
 	      		for (ServerClientThread user : activeClients) {
 	      			if (user.getUsername().contentEquals(name)) {
@@ -330,28 +336,24 @@ public class ServerClientThread extends Thread implements Runnable {
 	private void checkName() throws IOException {
 		/*
 		 * calls login function and checks the given name
-		 * is a thread
+		 * 
 		 */
-		Thread t = new Thread(new Runnable() {
-			@Override
-	        public void run() {
-				String result = login();
-				try {
-					// we need a bit of time before we can work with the result
-					Thread.sleep(300);
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				}
-				if (result == null) {
-					// if password wrong or name does exist
-					out.println("Username does allready exist or incorrect Password!");
-					out.println("!close");
-				}
-				// welcome message
-				else { out.println(result); }
-	        }
-	    });
-	    t.start();
+		String result = login();
+		try {
+			// we need a bit of time before we can work with the result
+			Thread.sleep(300);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		if (result == null || result.contentEquals("!exist")) {
+			// if password wrong or name does exist or user is online
+			exit = true;
+			return;
+		}
+		// welcome message
+		else {
+			out.println(result);
+		}
 	}
 	
 	@Override
@@ -367,7 +369,12 @@ public class ServerClientThread extends Thread implements Runnable {
 			this.password = pass;
 			// check name and password (is a thread)
 			checkName();
-			
+			try {
+				// we need a bit of time before we can work with the result
+				Thread.sleep(300);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
 			String line;
 			while (!exit) {
 				// checks user input and does something
@@ -400,23 +407,25 @@ public class ServerClientThread extends Thread implements Runnable {
 					}
 				}
 			}
-			this.close(); 
+			this.close(false); 
 		}
 		catch (IOException e) {
 			System.out.println(this.name + " was violently closed.");
 			try {
-				this.close();
+				this.close(true);
 			} catch (IOException e1) {
 				e1.printStackTrace();
 			}
 		}
 	}
 	
-	public void close() throws IOException {
+	public void close(boolean joined) throws IOException {
 		/*
 		 * closes input stream and client and remove client instance
 		 */
-		removeUser();
+		if (joined) {
+			removeUser();
+		}
 		exit = true;
 		in.close();
 		client.close();

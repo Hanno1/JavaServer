@@ -63,7 +63,7 @@ public class ClientFrame extends JFrame implements ActionListener, KeyListener {
 		// set Size and closing Operator
 		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		this.setSize(1130, 500);
-		this.setResizable(false);
+		this.setResizable(true);
 	}
 	
 	private void createRightPanel() {
@@ -112,7 +112,7 @@ public class ClientFrame extends JFrame implements ActionListener, KeyListener {
 		 * a Input and a Button to send Messages
 		 */
 		// create Output TextArea
-		outputPanel = new JTextArea(14, 10);
+		outputPanel = new JTextArea(14, 20);
 		outputPanel.setLineWrap(true);
 		outputPanel.setBorder(BorderFactory.createTitledBorder("JTextArea"));
 		// sets Editable and Visibility of the output Panel
@@ -152,7 +152,7 @@ public class ClientFrame extends JFrame implements ActionListener, KeyListener {
 		rowPanel.add(sendMessage, BorderLayout.EAST);
 		rowPanel.setVisible(true);
 		// add to Left Panel
-		leftPanel.add(scroll, BorderLayout.NORTH);
+		leftPanel.add(scroll, BorderLayout.CENTER);
 		leftPanel.add(rowPanel, BorderLayout.SOUTH);
 		
 		leftPanel.setBorder(BorderFactory.createTitledBorder("left!"));
@@ -328,4 +328,12 @@ public class ClientFrame extends JFrame implements ActionListener, KeyListener {
 
 	@Override
 	public void keyReleased(KeyEvent e) {}
+	
+	public void close() {
+		/*
+		 * closes the client
+		 */
+		this.dispose();
+	}
+	
 }

@@ -3,6 +3,8 @@ package master;
 import java.io.*;
 import java.net.Socket;
 
+import javax.swing.JOptionPane;
+
 public class ClientStart extends Thread {
 	/*
 	 * Starting and Connecting client to the server
@@ -27,14 +29,16 @@ public class ClientStart extends Thread {
 			// checking the server Input and send it to the frame
 			String serverInput;
 			while ((serverInput = in.readLine()) != null) {
-				if (serverInput.contentEquals("!close")) { frame.writeOut(serverInput); break; }
 				frame.writeOut(serverInput);
 			}
-			// if serverInput is null the connection was killed
-			System.out.println("The connection to the server was shut down!");
+			// if login failed
+			JOptionPane.showMessageDialog(frame,
+					"Username does already exist, incorrect Password or user is online",
+					"ERROR", JOptionPane.ERROR_MESSAGE);
 			// close client and destroy frame
+			frame.close();
 			client.close();
-			frame.dispose();
+			System.exit(0);
 		}
 		catch (IOException e) {
 			// if we cant connect to the server
