@@ -25,7 +25,8 @@ public class ClientLogin extends JFrame implements ActionListener, KeyListener {
 		this.out = out;
 		this.frame = frame;
 		// main panel with gridlayout
-		mainPanel = new JPanel(new GridLayout(3, 0));
+		mainPanel = new JPanel(new GridLayout(3, 0, 15, 15));
+		mainPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 		// call this.login which adds components to the main panel
 		this.login();
 		this.add(mainPanel);
