@@ -11,12 +11,16 @@ public class ServerStart extends Thread implements Runnable {
 	 */
 	// initialise port
 	private final static int port = 1244;
+	// path there all users and passwords are stored
+	private final static String path = "C:\\Users\\hanno\\OneDrive\\Desktop\\Informatik\\Semester VII"
+			+ "\\fortgeschrittenes Programmierpraktikum\\git\\src\\master\\userList.csv";
 	// set exit variable (if true we kill the server)
 	private boolean exit = false;
 	private ServerSocket serverMain;
 	// 2 lists to manage the clients. one with all clients
 	// and one with the active ones
-	private ArrayList<ServerClientThread> allClients;
+	private HashMap<String, String> allClients;
+	// private ArrayList<ServerClientThread> allClients;
 	private ArrayList<ServerClientThread> activeClientList;
 	// chatrooms
 	private ArrayList<Chatroom> chatrooms;
@@ -27,17 +31,17 @@ public class ServerStart extends Thread implements Runnable {
 		 * and initialise the lists
 		 */
 		this.serverMain = new ServerSocket(port);
-		this.allClients = new ArrayList<ServerClientThread>();
+		this.allClients = new HashMap<String, String>();
 		this.activeClientList = new ArrayList<ServerClientThread>();
 	}
 	
-	public ArrayList<ServerClientThread> getAllUsers() { return allClients; }
+	public HashMap<String,String> getAllUsers() { return allClients; }
 	
 	public ArrayList<ServerClientThread> getAllActiveUsers() { return activeClientList; }
 	
 	public ArrayList<Chatroom> getRooms(){ return chatrooms; }
 	
-	public void setAllUsers(ArrayList<ServerClientThread> allNewClients) {
+	public void setAllUsers(HashMap<String, String> allNewClients) {
 		this.allClients = allNewClients;
 	}
 	
@@ -56,6 +60,8 @@ public class ServerStart extends Thread implements Runnable {
 	@Override
 	public void run() {
 		try {
+			// read all existing users from the csv file
+			allClients = ReadAndWriteCsv.readCsv();
 			// create a room called main as the default room
 			chatrooms = new ArrayList<Chatroom>();
 			Chatroom main = new Chatroom("main");

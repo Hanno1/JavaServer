@@ -2,7 +2,7 @@ package master;
 
 import java.io.*;
 import java.net.*;
-import java.util.ArrayList;
+import java.util.*;
 
 public class ServerClientThread extends Thread implements Runnable {
 	/*
@@ -52,21 +52,21 @@ public class ServerClientThread extends Thread implements Runnable {
 		 * login methode - gets both client lists from the server and change them accordingly
 		 * is a thread since it may take a while
 		 */
-		ArrayList<ServerClientThread> allClients = server.getAllUsers();
+		HashMap<String, String> allClients = server.getAllUsers();
 		ArrayList<ServerClientThread> activeClients = server.getAllActiveUsers();
 		String result = "Welcome " + name;
 		boolean exist = false;
 		// go through every existing client
-		for (ServerClientThread clientThread : allClients) {
-			if (clientThread.getUsername().contentEquals(name)) {
-				if (clientThread.getUserpassword().contentEquals(password)) {
+		for (Map.Entry<String,String> client : allClients.entrySet()) {
+			if (client.getKey().contentEquals(name)) {
+				if (client.getValue().contentEquals(password)) {
 					// if name and password match we write welcome back
 					result = "Welcome back " + name;
 					exist = true;
 					// if there is already a user with same name and password online
 					// we dont want this to work
-					for (ServerClientThread client : activeClients) {
-						if (client.getUsername().contentEquals(name)) { return "!exist"; }
+					for (ServerClientThread activeClient : activeClients) {
+						if (activeClient.getUsername().contentEquals(name)) { return "!exist"; }
 					}
 					break;
 				}
@@ -76,7 +76,8 @@ public class ServerClientThread extends Thread implements Runnable {
 		}
 		// new client
 		if (exist == false) {
-			allClients.add(this);
+			allClients.put(this.name, this.password);
+			ReadAndWriteCsv.writeCsv(this.name,  this.password);
 		}
 		// join room with name main (does exit since its the first room created)
 		joinRoom("main");

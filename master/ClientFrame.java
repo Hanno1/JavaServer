@@ -3,10 +3,10 @@ package master;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.PrintWriter;
-
 import javax.swing.*;
 import javax.swing.border.*;
 import javax.swing.event.*;
+
 public class ClientFrame extends JFrame implements ActionListener, KeyListener {
 	/*
 	 * creates a frame for the client
@@ -19,7 +19,7 @@ public class ClientFrame extends JFrame implements ActionListener, KeyListener {
 	PrintWriter out;
 	// define some Panel Variables
 	JPanel finalPanel, leftPanel, rightPanel, roomPanel;
-	JPanel rowPanel, nickname;
+	JPanel rowPanel, nickname, chatRooms, onlinePanel;
 	// Textfields (insert text and insert new nickname
 	JTextField insert, insertNickname;
 	// display output from the server
@@ -27,14 +27,20 @@ public class ClientFrame extends JFrame implements ActionListener, KeyListener {
 	// various buttons :D
 	JButton sendMessage, sendNickname, createRoom;
 	
-	JLabel room;
+	JLabel room, changeNickname, online;
 	
 	// list for rooms and users with corresponding listmodels to add elements	
 	JList<String> onlineUsers, rooms;
 	DefaultListModel<String> listModelOnline, listModelRooms;
-		
+	
+	JMenuBar menubar;
+	JMenu languageMenu, colorTheme;
+	JCheckBoxMenuItem english, german, spanish, light, dark;
+	
+		 
 	Border blackline = BorderFactory.createLineBorder(Color.black, 1);
 	Border raisedetched = BorderFactory.createEtchedBorder(EtchedBorder.RAISED);
+	Border ligthline = BorderFactory.createLineBorder(new Color(200, 220, 40), 1);
 	
 	Font output = new Font("Arial", Font.BOLD + Font.ITALIC, 20);
 	
@@ -78,22 +84,24 @@ public class ClientFrame extends JFrame implements ActionListener, KeyListener {
 	private void createMenuBar() {
 		/*
 		 * creates and adds a menu bar to the frame
+		 * the menu bar contains a language submenu and a color theme submenu
 		 */
-		JMenuBar menubar = new JMenuBar();
-		JMenu languageMenu = new JMenu("Language");
-		JCheckBoxMenuItem english = new JCheckBoxMenuItem("English");
+		menubar = new JMenuBar();
+		menubar.setBorder(blackline);
+		languageMenu = new JMenu("Language");
+		english = new JCheckBoxMenuItem("English");
 		english.setSelected(true);
 		languageMenu.add(english);
-		JCheckBoxMenuItem german = new JCheckBoxMenuItem("Deutsch");
+		german = new JCheckBoxMenuItem("Deutsch");
 		languageMenu.add(german);
-		JCheckBoxMenuItem spanish = new JCheckBoxMenuItem("Espanol");
+		spanish = new JCheckBoxMenuItem("Espanol");
 		languageMenu.add(spanish);
 		
-		JMenu colorTheme = new JMenu("Color Theme");
-		JCheckBoxMenuItem light = new JCheckBoxMenuItem("Ligth Color Theme");
+		colorTheme = new JMenu("Color Theme");
+		light = new JCheckBoxMenuItem("Ligth Color Theme");
 		light.setSelected(true);
 		colorTheme.add(light);
-		JCheckBoxMenuItem dark = new JCheckBoxMenuItem("Dark Color Theme");
+		dark = new JCheckBoxMenuItem("Dark Color Theme");
 		colorTheme.add(dark);
 		
 		english.addActionListener(new ActionListener() {
@@ -144,7 +152,29 @@ public class ClientFrame extends JFrame implements ActionListener, KeyListener {
 				room.setText("foros existe");
 			}
 		});
-
+		light.setSelected(true);
+		light.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				light.setSelected(true);
+				dark.setSelected(false);
+				Color background = new Color(255, 255, 255);
+				Color foreground = new Color(0, 0, 0);
+				setColor(background, background, background, foreground, foreground);
+			}
+		});
+		dark.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				light.setSelected(false);
+				dark.setSelected(true);
+				Color background0 = new Color(40, 40, 40);
+				Color background1 = new Color(50, 50, 50);
+				Color background2 = new Color(70, 70, 70);
+				Color foreground = new Color(60, 170, 50);
+				Color foregroundList = new Color(200, 220, 40);
+				setColor(background0, background1, background2, foreground, foregroundList);
+			}
+		});
+		
 		menubar.add(languageMenu);
 		menubar.add(colorTheme);
 		this.setJMenuBar(menubar);
@@ -157,10 +187,12 @@ public class ClientFrame extends JFrame implements ActionListener, KeyListener {
 		 * and a list for the users
 		 */
 		// create nickname Panel
+		changeNickname = new JLabel("Change Nickname: ");
 		nickname = new JPanel(new BorderLayout());
 		// create insert Field
 		insertNickname = new JTextField(10);
 		insertNickname.addKeyListener(this);
+		insertNickname.setBorder(raisedetched);
 		// create Button
 		sendNickname = new JButton("Change Name");
 		// add listener
@@ -177,18 +209,20 @@ public class ClientFrame extends JFrame implements ActionListener, KeyListener {
 			}
 		});
 		// add Panels
+		nickname.add(changeNickname, BorderLayout.NORTH);
 		nickname.add(insertNickname, BorderLayout.WEST);
 		nickname.add(sendNickname, BorderLayout.EAST);
-		nickname.setBorder(BorderFactory.createTitledBorder(blackline, "change Nickname"));
 		// add list for all users (using JList and default Listmodel)
+		onlinePanel = new JPanel(new BorderLayout());
+		online = new JLabel("Online Users:");
 		listModelOnline = new DefaultListModel<String>();
-		onlineUsers = new JList<String>(listModelOnline);
-		onlineUsers.setEnabled(false);
-		
-		onlineUsers.setBorder(BorderFactory.createTitledBorder(blackline, "Online Users!"));
+		onlineUsers = new JList<String>(listModelOnline);		
+		onlineUsers.setBorder(blackline);
+		onlinePanel.add(online, BorderLayout.NORTH);
+		onlinePanel.add(onlineUsers, BorderLayout.CENTER);
 		// add nickname-Panel and list to the rightPanel
 		rightPanel.add(nickname, BorderLayout.NORTH);
-		rightPanel.add(onlineUsers, BorderLayout.CENTER);
+		rightPanel.add(onlinePanel, BorderLayout.CENTER);
 	}
 	
 	private void createLeftPanel() {
@@ -203,13 +237,14 @@ public class ClientFrame extends JFrame implements ActionListener, KeyListener {
 		// sets Editable and Visibility of the output Panel
 		outputPanel.setEditable(false);
 		outputPanel.setVisible(true);
+		outputPanel.setBorder(blackline);
 		// we need to put the outputPanel into an scroll panel
 		JScrollPane scroll = new JScrollPane(outputPanel);
 		
 		// The row Panel should contain the insert and the button to send messages
 		rowPanel = new JPanel(new BorderLayout());
 		// text Field insert
-		insert = new JTextField(19);
+		insert = new JTextField(50);
 		insert.setBorder(raisedetched);
 		insert.addKeyListener(this);
 		// Sending Button
@@ -235,6 +270,7 @@ public class ClientFrame extends JFrame implements ActionListener, KeyListener {
 		// add Components
 		rowPanel.add(insert, BorderLayout.WEST);
 		rowPanel.add(sendMessage, BorderLayout.EAST);
+		
 		rowPanel.setVisible(true);
 		// add to Left Panel
 		leftPanel.add(scroll, BorderLayout.CENTER);
@@ -247,7 +283,7 @@ public class ClientFrame extends JFrame implements ActionListener, KeyListener {
 		 */
 		room = new JLabel("avaiable Chatrooms:");
 		// basic panel
-		JPanel chatRooms = new JPanel(new BorderLayout(5, 10));
+		chatRooms = new JPanel(new BorderLayout(5, 10));
 		// create a list and a model
 		listModelRooms = new DefaultListModel<String>();
 		rooms = new JList<String>(listModelRooms);
@@ -278,6 +314,7 @@ public class ClientFrame extends JFrame implements ActionListener, KeyListener {
 		chatRooms.add(rooms);
 		chatRooms.add(createRoom, BorderLayout.SOUTH);
 		chatRooms.setVisible(true);
+		roomPanel.setBorder(blackline);
 		roomPanel.add(chatRooms, BorderLayout.CENTER);
 	}
 	
@@ -297,7 +334,6 @@ public class ClientFrame extends JFrame implements ActionListener, KeyListener {
 					else {
 						// if the code is !room we update the room list
 						if (line.length() > 5 && line.substring(0, 5).contentEquals("!room")) {
-							System.out.println("1");
 							updateRooms(line);
 						}
 						// just output the rest
@@ -421,4 +457,59 @@ public class ClientFrame extends JFrame implements ActionListener, KeyListener {
 		this.dispose();
 	}
 	
+	private void setColor(Color background0, Color background1, Color background2, Color foreground, Color foregroundList) {
+		/*
+		 * sets color for almost every component and borders
+		 */
+		finalPanel.setBackground(background0);
+		// menu
+		menubar.setBackground(background0);
+		languageMenu.setBackground(background0);
+		languageMenu.setForeground(foreground);
+		colorTheme.setBackground(background0);
+		colorTheme.setForeground(foreground);
+		english.setBackground(background0);
+		english.setForeground(foreground);
+		german.setBackground(background0);
+		german.setForeground(foreground);
+		spanish.setBackground(background0);
+		spanish.setForeground(foreground);
+		light.setBackground(background0);
+		light.setForeground(foreground);
+		dark.setBackground(background0);
+		dark.setForeground(foreground);		
+		// left panel
+		leftPanel.setBackground(background0);
+		rowPanel.setBackground(background0);
+		insert.setBackground(background1);
+		insert.setForeground(foreground);
+		outputPanel.setBackground(background1);
+		outputPanel.setForeground(foreground);
+		// Buttons
+		sendMessage.setBackground(background1);
+		sendNickname.setBackground(background1);
+		createRoom.setBackground(background1);
+		sendMessage.setForeground(foreground);
+		sendNickname.setForeground(foreground);
+		createRoom.setForeground(foreground);
+		// JLists
+		onlinePanel.setBackground(background1);
+		onlineUsers.setBackground(background2);
+		rooms.setBackground(background1);
+		onlineUsers.setForeground(foregroundList);
+		rooms.setForeground(foregroundList);
+		online.setBackground(background1);
+		online.setForeground(foreground);
+		// Roompanel and Label
+		roomPanel.setBackground(background1);
+		chatRooms.setBackground(background1);
+		room.setBackground(background1);
+		room.setForeground(foreground);
+		// nickname panel
+		rightPanel.setBackground(background0);
+		insertNickname.setBackground(background1);
+		insertNickname.setForeground(foreground);
+		nickname.setBackground(background1);
+		changeNickname.setForeground(foreground);
+	}
 }
