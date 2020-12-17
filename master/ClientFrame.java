@@ -1,8 +1,10 @@
 package master;
 
 import java.awt.*;
+import java.awt.Font;
 import java.awt.event.*;
 import java.io.PrintWriter;
+
 import javax.swing.*;
 import javax.swing.border.*;
 import javax.swing.event.*;
@@ -35,12 +37,17 @@ public class ClientFrame extends JFrame implements ActionListener, KeyListener {
 	
 	JMenuBar menubar;
 	JMenu languageMenu, colorTheme;
-	JCheckBoxMenuItem english, german, spanish, light, dark;
-	
+	JCheckBoxMenuItem english, german, spanish, light, dark, blue;
+	// color schemes. first is menu bar, second is final panel, third is textfields and list, 
+	// fourth is buttons and fifth is writing color
+	Color[] lightScheme = {new Color(0xffffff), new Color(0xffffff), 
+			new Color(0xffffff), new Color(0xffffff), new Color(0x000000)};
+	Color[] blueScheme = {new Color(0xbbc4f2), new Color(0xbdc6d4), 
+			new Color(0xdfe2ef), new Color(0xc8cff2), new Color(0x000000)};
+	Color[] darkScheme = {new Color(0x102027), new Color(0x62727b), 
+			new Color(0x37474f), new Color(0x00695c), new Color(0xffffff)};
 		 
-	Border blackline = BorderFactory.createLineBorder(Color.black, 1);
 	Border raisedetched = BorderFactory.createEtchedBorder(EtchedBorder.RAISED);
-	Border ligthline = BorderFactory.createLineBorder(new Color(200, 220, 40), 1);
 	
 	Font output = new Font("Arial", Font.BOLD + Font.ITALIC, 20);
 	
@@ -87,7 +94,6 @@ public class ClientFrame extends JFrame implements ActionListener, KeyListener {
 		 * the menu bar contains a language submenu and a color theme submenu
 		 */
 		menubar = new JMenuBar();
-		menubar.setBorder(blackline);
 		languageMenu = new JMenu("Language");
 		english = new JCheckBoxMenuItem("English");
 		english.setSelected(true);
@@ -101,6 +107,8 @@ public class ClientFrame extends JFrame implements ActionListener, KeyListener {
 		light = new JCheckBoxMenuItem("Ligth Color Theme");
 		light.setSelected(true);
 		colorTheme.add(light);
+		blue = new JCheckBoxMenuItem("Blue Color Theme");
+		colorTheme.add(blue);
 		dark = new JCheckBoxMenuItem("Dark Color Theme");
 		colorTheme.add(dark);
 		
@@ -109,6 +117,7 @@ public class ClientFrame extends JFrame implements ActionListener, KeyListener {
 				languageMenu.setText("Language");
 				colorTheme.setText("Color Theme");
 				light.setText("Light Color Theme");
+				blue.setText("Blue Color Theme");
 				dark.setText("Dark Color Theme");
 				english.setSelected(true);
 				german.setSelected(false);
@@ -125,6 +134,7 @@ public class ClientFrame extends JFrame implements ActionListener, KeyListener {
 				languageMenu.setText("Sprache");
 				colorTheme.setText("Farb Thema");
 				light.setText("Hell");
+				blue.setText("Blau");
 				dark.setText("Dunktel");
 				german.setSelected(true);
 				english.setSelected(false);
@@ -141,6 +151,7 @@ public class ClientFrame extends JFrame implements ActionListener, KeyListener {
 				languageMenu.setText("Idioma");
 				colorTheme.setText("Tema de Color");
 				light.setText("brillante");
+				blue.setText("azure");
 				dark.setText("oscuro");
 				english.setSelected(false);
 				german.setSelected(false);
@@ -156,22 +167,25 @@ public class ClientFrame extends JFrame implements ActionListener, KeyListener {
 		light.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				light.setSelected(true);
+				blue.setSelected(false);
 				dark.setSelected(false);
-				Color background = new Color(255, 255, 255);
-				Color foreground = new Color(0, 0, 0);
-				setColor(background, background, background, foreground, foreground);
+				setColor(lightScheme[0], lightScheme[1], lightScheme[2], lightScheme[3], lightScheme[4]);
+			}
+		});
+		blue.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				light.setSelected(false);
+				blue.setSelected(true);
+				dark.setSelected(false);
+				setColor(blueScheme[0], blueScheme[1], blueScheme[2], blueScheme[3], blueScheme[4]);
 			}
 		});
 		dark.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				light.setSelected(false);
+				blue.setSelected(false);
 				dark.setSelected(true);
-				Color background0 = new Color(40, 40, 40);
-				Color background1 = new Color(50, 50, 50);
-				Color background2 = new Color(70, 70, 70);
-				Color foreground = new Color(60, 170, 50);
-				Color foregroundList = new Color(200, 220, 40);
-				setColor(background0, background1, background2, foreground, foregroundList);
+				setColor(darkScheme[0], darkScheme[1], darkScheme[2], darkScheme[3], darkScheme[4]);
 			}
 		});
 		
@@ -217,7 +231,6 @@ public class ClientFrame extends JFrame implements ActionListener, KeyListener {
 		online = new JLabel("Online Users:");
 		listModelOnline = new DefaultListModel<String>();
 		onlineUsers = new JList<String>(listModelOnline);		
-		onlineUsers.setBorder(blackline);
 		onlinePanel.add(online, BorderLayout.NORTH);
 		onlinePanel.add(onlineUsers, BorderLayout.CENTER);
 		// add nickname-Panel and list to the rightPanel
@@ -237,7 +250,6 @@ public class ClientFrame extends JFrame implements ActionListener, KeyListener {
 		// sets Editable and Visibility of the output Panel
 		outputPanel.setEditable(false);
 		outputPanel.setVisible(true);
-		outputPanel.setBorder(blackline);
 		// we need to put the outputPanel into an scroll panel
 		JScrollPane scroll = new JScrollPane(outputPanel);
 		
@@ -314,7 +326,6 @@ public class ClientFrame extends JFrame implements ActionListener, KeyListener {
 		chatRooms.add(rooms);
 		chatRooms.add(createRoom, BorderLayout.SOUTH);
 		chatRooms.setVisible(true);
-		roomPanel.setBorder(blackline);
 		roomPanel.add(chatRooms, BorderLayout.CENTER);
 	}
 	
@@ -457,59 +468,61 @@ public class ClientFrame extends JFrame implements ActionListener, KeyListener {
 		this.dispose();
 	}
 	
-	private void setColor(Color background0, Color background1, Color background2, Color foreground, Color foregroundList) {
+	private void setColor(Color menu, Color background, Color textfield, Color button, Color foreground) {
 		/*
 		 * sets color for almost every component and borders
 		 */
-		finalPanel.setBackground(background0);
+		finalPanel.setBackground(background);
+		leftPanel.setBackground(background);
+		rowPanel.setBackground(background);
+		rightPanel.setBackground(background);
+		nickname.setBackground(background);
+		onlinePanel.setBackground(background);
+		roomPanel.setBackground(background);
+		chatRooms.setBackground(background);
+		// label
+		online.setBackground(background);
+		online.setForeground(foreground);
+		room.setBackground(background);
+		room.setForeground(foreground);
+		changeNickname.setBackground(background);
+		changeNickname.setForeground(foreground);
 		// menu
-		menubar.setBackground(background0);
-		languageMenu.setBackground(background0);
+		menubar.setBackground(menu);
+		languageMenu.setBackground(menu);
 		languageMenu.setForeground(foreground);
-		colorTheme.setBackground(background0);
+		colorTheme.setBackground(menu);
 		colorTheme.setForeground(foreground);
-		english.setBackground(background0);
+		english.setBackground(menu);
 		english.setForeground(foreground);
-		german.setBackground(background0);
+		german.setBackground(menu);
 		german.setForeground(foreground);
-		spanish.setBackground(background0);
+		spanish.setBackground(menu);
 		spanish.setForeground(foreground);
-		light.setBackground(background0);
+		light.setBackground(menu);
 		light.setForeground(foreground);
-		dark.setBackground(background0);
+		blue.setBackground(menu);
+		blue.setForeground(foreground);
+		dark.setBackground(menu);
 		dark.setForeground(foreground);		
-		// left panel
-		leftPanel.setBackground(background0);
-		rowPanel.setBackground(background0);
-		insert.setBackground(background1);
+		// textfields and lists
+		insert.setBackground(textfield);
 		insert.setForeground(foreground);
-		outputPanel.setBackground(background1);
+		outputPanel.setBackground(textfield);
 		outputPanel.setForeground(foreground);
+		insertNickname.setBackground(textfield);
+		insertNickname.setForeground(foreground);
+		// lists
+		onlineUsers.setBackground(textfield);
+		rooms.setBackground(textfield);
+		onlineUsers.setForeground(foreground);
+		rooms.setForeground(foreground);
 		// Buttons
-		sendMessage.setBackground(background1);
-		sendNickname.setBackground(background1);
-		createRoom.setBackground(background1);
+		sendMessage.setBackground(button);
+		sendNickname.setBackground(button);
+		createRoom.setBackground(button);
 		sendMessage.setForeground(foreground);
 		sendNickname.setForeground(foreground);
 		createRoom.setForeground(foreground);
-		// JLists
-		onlinePanel.setBackground(background1);
-		onlineUsers.setBackground(background2);
-		rooms.setBackground(background1);
-		onlineUsers.setForeground(foregroundList);
-		rooms.setForeground(foregroundList);
-		online.setBackground(background1);
-		online.setForeground(foreground);
-		// Roompanel and Label
-		roomPanel.setBackground(background1);
-		chatRooms.setBackground(background1);
-		room.setBackground(background1);
-		room.setForeground(foreground);
-		// nickname panel
-		rightPanel.setBackground(background0);
-		insertNickname.setBackground(background1);
-		insertNickname.setForeground(foreground);
-		nickname.setBackground(background1);
-		changeNickname.setForeground(foreground);
 	}
 }
