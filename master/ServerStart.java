@@ -11,9 +11,6 @@ public class ServerStart extends Thread implements Runnable {
 	 */
 	// initialise port
 	private final static int port = 1244;
-	// path there all users and passwords are stored
-	private final static String path = "C:\\Users\\hanno\\OneDrive\\Desktop\\Informatik\\Semester VII"
-			+ "\\fortgeschrittenes Programmierpraktikum\\git\\src\\master\\userList.csv";
 	// set exit variable (if true we kill the server)
 	private boolean exit = false;
 	private ServerSocket serverMain;
@@ -24,6 +21,7 @@ public class ServerStart extends Thread implements Runnable {
 	private ArrayList<ServerClientThread> activeClientList;
 	// chatrooms
 	private ArrayList<Chatroom> chatrooms;
+	private ServerFrame serverFrame;
 	
 	public ServerStart(int port) throws IOException{
 		/*
@@ -33,6 +31,8 @@ public class ServerStart extends Thread implements Runnable {
 		this.serverMain = new ServerSocket(port);
 		this.allClients = new HashMap<String, String>();
 		this.activeClientList = new ArrayList<ServerClientThread>();
+		
+		this.serverFrame = new ServerFrame();
 	}
 	
 	public HashMap<String,String> getAllUsers() { return allClients; }
@@ -56,6 +56,8 @@ public class ServerStart extends Thread implements Runnable {
 		Chatroom newRoom = new Chatroom(name);
 		chatrooms.add(newRoom);
 	}
+	
+	public void writeLog(String message) { serverFrame.writeLog(message); }
 	
 	@Override
 	public void run() {

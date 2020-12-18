@@ -14,8 +14,15 @@ public class ClientLogin extends JFrame implements ActionListener, KeyListener {
 	ClientFrame frame;
 	JLabel user, pass;
 	TextField name, word;
-	JPanel mainPanel;
+	JPanel mainPanel, username, password;
 	JButton login;
+	// define colorscheme
+	Color[] blueScheme = {new Color(0xbbc4f2), new Color(0xbdc6d4),
+			new Color(0xdfe2ef), new Color(0xc8cff2), new Color(0x000000)};
+	Color[] darkScheme = {new Color(0x102027), new Color(0x62727b), 
+			new Color(0x37474f), new Color(0x00695c), new Color(0xffffff)};
+	
+	Font label = new Font("Arial", Font.BOLD + Font.ITALIC, 20);
 	
 	public ClientLogin(PrintWriter out, ClientFrame frame) {
 		/*
@@ -35,6 +42,7 @@ public class ClientLogin extends JFrame implements ActionListener, KeyListener {
 		this.setSize(500, 300);
 		this.setVisible(true);
 		this.setResizable(false);
+		this.setColor(darkScheme[0], darkScheme[1], darkScheme[2], darkScheme[3], darkScheme[4]);
 	}
 	
 	private void login() {
@@ -43,22 +51,27 @@ public class ClientLogin extends JFrame implements ActionListener, KeyListener {
 		 * 2 labels, 2 textfields and one button
 		 */
 		// name panel with KeyListener
-		JPanel username = new JPanel(new BorderLayout());
+		username = new JPanel(new BorderLayout());
 		user = new JLabel("Username: ");
-		name = new TextField(20);
+		user.setFont(label);
+		name = new TextField(30);
+		name.setFont(label);
 		name.addKeyListener(this);
 		username.add(user, BorderLayout.WEST);
 		username.add(name, BorderLayout.EAST);
 		// password panel with KeyListener
-		JPanel password = new JPanel(new BorderLayout());
+		password = new JPanel(new BorderLayout());
 		pass = new JLabel("Password: ");
-		word = new TextField(20);
+		pass.setFont(label);
+		word = new TextField(30);
 		word.setEchoChar('*');
+		word.setFont(label);
 		word.addKeyListener(this);
 		password.add(pass, BorderLayout.WEST);
 		password.add(word, BorderLayout.EAST);
 		// login button with ActionListener
 		login = new JButton("login");
+		login.setFont(label);
 		login.addActionListener(this);
 		// add components to the main panel
 		mainPanel.add(username, BorderLayout.NORTH);
@@ -108,4 +121,21 @@ public class ClientLogin extends JFrame implements ActionListener, KeyListener {
 
 	@Override
 	public void keyReleased(KeyEvent e) {}
+	
+	public void setColor(Color background, Color label, Color textfield, Color button, Color text) {
+		mainPanel.setBackground(background);
+		
+		username.setBackground(label);
+		user.setForeground(text);
+		password.setBackground(label);
+		pass.setForeground(text);
+		
+		name.setBackground(textfield);
+		name.setForeground(text);
+		word.setBackground(textfield);
+		word.setForeground(text);
+		
+		login.setBackground(button);
+		login.setForeground(text);
+	}
 }

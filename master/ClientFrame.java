@@ -40,8 +40,8 @@ public class ClientFrame extends JFrame implements ActionListener, KeyListener {
 	JCheckBoxMenuItem english, german, spanish, light, dark, blue;
 	// color schemes. first is menu bar, second is final panel, third is textfields and list, 
 	// fourth is buttons and fifth is writing color
-	Color[] lightScheme = {new Color(0xffffff), new Color(0xffffff), 
-			new Color(0xffffff), new Color(0xffffff), new Color(0x000000)};
+	Color[] lightScheme = {new Color(0xffffff), new Color(0xcffffff), 
+			new Color(0xffffff), new Color(0xc5e1a5), new Color(0x000000)};
 	Color[] blueScheme = {new Color(0xbbc4f2), new Color(0xbdc6d4), 
 			new Color(0xdfe2ef), new Color(0xc8cff2), new Color(0x000000)};
 	Color[] darkScheme = {new Color(0x102027), new Color(0x62727b), 
@@ -86,6 +86,7 @@ public class ClientFrame extends JFrame implements ActionListener, KeyListener {
 		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		this.setSize(1130, 500);
 		this.setResizable(true);
+		this.setColor(darkScheme[0], darkScheme[1], darkScheme[2], darkScheme[3], darkScheme[4]);
 	}
 	
 	private void createMenuBar() {
@@ -151,7 +152,7 @@ public class ClientFrame extends JFrame implements ActionListener, KeyListener {
 				languageMenu.setText("Idioma");
 				colorTheme.setText("Tema de Color");
 				light.setText("brillante");
-				blue.setText("azure");
+				blue.setText("azule");
 				dark.setText("oscuro");
 				english.setSelected(false);
 				german.setSelected(false);
@@ -163,7 +164,8 @@ public class ClientFrame extends JFrame implements ActionListener, KeyListener {
 				room.setText("foros existe");
 			}
 		});
-		light.setSelected(true);
+		dark.setSelected(true);
+		light.setSelected(false);
 		light.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				light.setSelected(true);
@@ -202,7 +204,7 @@ public class ClientFrame extends JFrame implements ActionListener, KeyListener {
 		 */
 		// create nickname Panel
 		changeNickname = new JLabel("Change Nickname: ");
-		nickname = new JPanel(new BorderLayout());
+		nickname = new JPanel(new BorderLayout(10, 10));
 		// create insert Field
 		insertNickname = new JTextField(10);
 		insertNickname.addKeyListener(this);
@@ -254,7 +256,7 @@ public class ClientFrame extends JFrame implements ActionListener, KeyListener {
 		JScrollPane scroll = new JScrollPane(outputPanel);
 		
 		// The row Panel should contain the insert and the button to send messages
-		rowPanel = new JPanel(new BorderLayout());
+		rowPanel = new JPanel(new BorderLayout(20, 20));
 		// text Field insert
 		insert = new JTextField(50);
 		insert.setBorder(raisedetched);
@@ -280,7 +282,7 @@ public class ClientFrame extends JFrame implements ActionListener, KeyListener {
 			}
 		});
 		// add Components
-		rowPanel.add(insert, BorderLayout.WEST);
+		rowPanel.add(insert, BorderLayout.CENTER);
 		rowPanel.add(sendMessage, BorderLayout.EAST);
 		
 		rowPanel.setVisible(true);

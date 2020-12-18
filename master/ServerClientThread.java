@@ -9,6 +9,7 @@ public class ServerClientThread extends Thread implements Runnable {
 	 * This is the heart of the server: manages a client
 	 */
 	private boolean exit = false;
+	private boolean loged = false;
 	
 	private ServerStart server;
 	private Socket client;
@@ -63,6 +64,7 @@ public class ServerClientThread extends Thread implements Runnable {
 					// if name and password match we write welcome back
 					result = "Welcome back " + name;
 					exist = true;
+					server.writeLog(name + " just logged in again.");
 					// if there is already a user with same name and password online
 					// we dont want this to work
 					for (ServerClientThread activeClient : activeClients) {
@@ -71,11 +73,15 @@ public class ServerClientThread extends Thread implements Runnable {
 					break;
 				}
 				// password wrong or name does exist
-				else { return null;	}
+				else { 
+					server.writeLog(name + " just entered wrong password.");
+					return null;
+				}
 			}
 		}
 		// new client
 		if (exist == false) {
+			server.writeLog(name + " just logged in for the first time!");
 			allClients.put(this.name, this.password);
 			ReadAndWriteCsv.writeCsv(this.name,  this.password);
 		}
@@ -339,7 +345,10 @@ public class ServerClientThread extends Thread implements Runnable {
 		 * calls login function and checks the given name
 		 * 
 		 */
-		String result = login();
+		String result = null;
+		if (this.name != null && this.password != null) {
+			result = login();
+		}
 		try {
 			// we need a bit of time before we can work with the result
 			Thread.sleep(300);
@@ -370,6 +379,7 @@ public class ServerClientThread extends Thread implements Runnable {
 			this.password = pass;
 			// check name and password (is a thread)
 			checkName();
+			loged = true;
 			try {
 				// we need a bit of time before we can work with the result
 				Thread.sleep(300);
@@ -413,7 +423,7 @@ public class ServerClientThread extends Thread implements Runnable {
 		catch (IOException e) {
 			System.out.println(this.name + " was violently closed.");
 			try {
-				this.close(true);
+				this.close(loged);
 			} catch (IOException e1) {
 				e1.printStackTrace();
 			}
