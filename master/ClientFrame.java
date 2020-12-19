@@ -349,9 +349,21 @@ public class ClientFrame extends JFrame implements ActionListener, KeyListener {
 						if (line.length() > 5 && line.substring(0, 5).contentEquals("!room")) {
 							updateRooms(line);
 						}
-						// just output the rest
 						else {
-							outputPanel.append(line + "\n");
+							if (line.length() == 8 && line.contentEquals("!warning")) {
+								JOptionPane.showMessageDialog(frame, "Dont do this again",
+										"you have been warned", JOptionPane.WARNING_MESSAGE);
+							}
+							else {
+								if (line.length() == 6 && line.contentEquals("!close")) {
+									frame.dispose();
+								}
+								else {
+									// just output the rest
+									outputPanel.append(line + "\n");
+								}
+							}
+							
 						}
 					}
 				}
@@ -432,6 +444,22 @@ public class ClientFrame extends JFrame implements ActionListener, KeyListener {
 			// just add a room
 			if (line.substring(5, 6).contentEquals("a")) {
 				listModelRooms.addElement(line.substring(6));
+			}
+			else {
+				// change name 
+				if (line.substring(5, 6).contentEquals("n")) {
+					String[] names = line.substring(6).split(",");
+					// names[0] is old name
+					int index = listModelRooms.indexOf(names[0]);
+					listModelRooms.setElementAt(names[1], index);
+				}
+				else {
+					if (line.substring(5, 6).contentEquals("r")) {
+						// remove room
+						rooms.setSelectedIndex(0);
+						listModelRooms.removeElement(line.substring(6));
+					}
+				}
 			}
 		}
 	}

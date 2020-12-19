@@ -33,7 +33,7 @@ public class ClientStart extends Thread {
 			}
 			// if login failed
 			JOptionPane.showMessageDialog(frame,
-					"Username does already exist, incorrect Password or user is online",
+					"You were violently kicked out!",
 					"ERROR", JOptionPane.ERROR_MESSAGE);
 			// close client and destroy frame
 			frame.close();

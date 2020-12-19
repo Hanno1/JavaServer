@@ -22,6 +22,8 @@ public class Chatroom {
 	
 	public String getName() { return name; }
 	
+	public void setName(String newName) { this.name = newName; }
+	
 	public ArrayList<ServerClientThread> getClients() { return clients; }
 	
 	public void sendAll(String message) {

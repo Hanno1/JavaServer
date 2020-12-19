@@ -48,6 +48,8 @@ public class ServerClientThread extends Thread implements Runnable {
 	
 	public void sendMessage(String message) { out.println(message); }
 	
+	public void setExit(boolean e) { exit = e; }
+	
 	public String login() {
 		/*
 		 * login methode - gets both client lists from the server and change them accordingly
@@ -99,11 +101,12 @@ public class ServerClientThread extends Thread implements Runnable {
 		activeClients.add(this);
 		// sets the lists in the server according to the changes
 		server.setAllUsers(allClients);
-		server.setAllActiveUsers(activeClients);		
+		server.setAllActiveUsers(activeClients);
+		server.newClient(this, this.chatroom.getName(), false);
 		return result;
 	}
 	
-	public void createRoom(String name) {
+	public void createRoom(String roomName) {
 		/*
 		 * creates a new chatroom and sends a message to every user that 
 		 * the room is now joinable
@@ -112,7 +115,7 @@ public class ServerClientThread extends Thread implements Runnable {
 		boolean exist = false;
 		ArrayList<Chatroom> rooms = server.getRooms();
 		for (Chatroom room : rooms) {
-			if (room.getName().contentEquals(name)) {
+			if (room.getName().contentEquals(roomName)) {
 				exist = true;
 				break;
 			}
@@ -120,17 +123,19 @@ public class ServerClientThread extends Thread implements Runnable {
 		if (!exist) {
 			// add room to the server
 			// basically just creates a new chatroom and add it to the list
-			server.addRoom(name);
+			server.addRoom(roomName);
+			server.writeLog(name + " just created a new Room named " + roomName + ".");
+			server.sendRoom(roomName);
 		}
 	}
 	
-	public void joinRoom(String roomname) {
+	public void joinRoom(String roomName) {
 		/*
 		 * add the client to the list of clients of the room with name = name
 		 */
 		ArrayList<Chatroom> rooms = server.getRooms();
 		for (Chatroom room : rooms) {
-			if (room.getName().contentEquals(roomname)) {
+			if (room.getName().contentEquals(roomName)) {
 				room.sendAll(name + " just joined!");
 				try {
 					Thread.sleep(300);
@@ -148,25 +153,28 @@ public class ServerClientThread extends Thread implements Runnable {
 		}
 	}
 	
-	public void removeRoom(Chatroom room) {
+	public void removeRoom(Chatroom room, boolean exit) {
 		/*
 		 * remove a client from a room
 		 */
+		if (exit) { server.newClient(this, this.chatroom.getName(), true); }
 		// we need the assignement formerRoom to avoid null pointer exception
 		Chatroom formerRoom = chatroom;
 		// remove client from the list and set room attribute
 		room.removeClient(this);
 		// send leaving message and updated online list
-		formerRoom.sendAll(name + " just left");
+		formerRoom.sendAll(name + " just left.");
 		sendOnline("r", formerRoom, null);
 	}
 	
-	private void changeRoom(String newRoom) {
+	public void changeRoom(String newRoom) {
 		/*
 		 * just changes the room to the roomname name = newRoom
 		 * Basically uses the functions remove and join Room
 		 */
-		removeRoom(chatroom);		
+		server.writeLog(name + " just changed from " + chatroom.getName() + " to " + newRoom + ".");
+		server.changeRoom(this, chatroom.getName(), newRoom);
+		removeRoom(chatroom, false);
 		joinRoom(newRoom);
 	}
 	
@@ -219,7 +227,7 @@ public class ServerClientThread extends Thread implements Runnable {
 	      		server.setAllActiveUsers(activeClients);
 	      		// remove User from chatroom
 	      		Chatroom formerRoom = chatroom;
-	      		removeRoom(chatroom);
+	      		removeRoom(chatroom, true);
 	      		// send logout message and updated online list only after client is removed
 	      		// so we wont send it to the client
 	      		sendOnline("r", formerRoom, null);
@@ -231,6 +239,7 @@ public class ServerClientThread extends Thread implements Runnable {
 	    		}	
 	      		// send logout message
 	      		sendToAllR(name + " just logged Out", formerRoom);
+	      		server.writeLog(name + " just logged Out.");
 	        }
 	    });
 	    t.start();
@@ -394,13 +403,18 @@ public class ServerClientThread extends Thread implements Runnable {
 				else {
 					if (line.length() > 9 && line.substring(0, 9).contentEquals("!nickname")) {
 						// change nickname
+						server.changeNickname(this, this.nickname, line.substring(9));
+						try {
+							Thread.sleep(100);
+						} catch (InterruptedException e) {
+							e.printStackTrace();
+						}
 						sendOnline("c", null, line);
 					}
 					else { 
 						if (line.length() > 6 && line.substring(0, 6).contentEquals("!rooma")) {
 							// create new room
 							String newRoom = line.substring(6);
-							System.out.println(newRoom);
 							createRoom(newRoom);
 							sendRooms("a", newRoom);
 						}
@@ -434,10 +448,9 @@ public class ServerClientThread extends Thread implements Runnable {
 		/*
 		 * closes input stream and client and remove client instance
 		 */
-		if (joined) {
-			removeUser();
-		}
+		if (joined) { removeUser(); }
 		exit = true;
+		this.sendMessage("!close");
 		in.close();
 		client.close();
 		return;
