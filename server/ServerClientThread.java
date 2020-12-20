@@ -1,4 +1,4 @@
-package master;
+package server;
 
 import java.io.*;
 import java.net.*;
@@ -59,6 +59,14 @@ public class ServerClientThread extends Thread implements Runnable {
 		ArrayList<ServerClientThread> activeClients = server.getAllActiveUsers();
 		String result = "Welcome " + name;
 		boolean exist = false;
+		// check if user is banned
+		HashMap<String, String> banned = ReadAndWriteCsv.readCsv(1);
+		for (Map.Entry<String,String> ban : banned.entrySet()) {
+			if (ban.getKey().contentEquals(name)) { 
+				server.writeLog("Banned User " + name + " just tried to login.");
+				return null;
+			}
+		}
 		// go through every existing client
 		for (Map.Entry<String,String> client : allClients.entrySet()) {
 			if (client.getKey().contentEquals(name)) {
@@ -85,7 +93,7 @@ public class ServerClientThread extends Thread implements Runnable {
 		if (exist == false) {
 			server.writeLog(name + " just logged in for the first time!");
 			allClients.put(this.name, this.password);
-			ReadAndWriteCsv.writeCsv(this.name,  this.password);
+			ReadAndWriteCsv.writeCsv(this.name,  this.password, 0);
 		}
 		// join room with name main (does exit since its the first room created)
 		joinRoom("main");
@@ -340,6 +348,8 @@ public class ServerClientThread extends Thread implements Runnable {
 		Thread t = new Thread(new Runnable() {
 			@Override
 			public void run() {
+				boolean frameRoom = server.sameRoom(chatroom.getName());
+				if (frameRoom) { server.sendToFrame(nickname + ": " + message); }
 				ArrayList<ServerClientThread> activeClients = chatroom.getClients();
 				for (ServerClientThread user : activeClients) {
 					user.sendMessage(nickname + ": " + message);

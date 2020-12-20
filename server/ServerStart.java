@@ -1,4 +1,4 @@
-package master;
+package server;
 
 import java.io.*;
 import java.net.*;
@@ -22,6 +22,7 @@ public class ServerStart extends Thread implements Runnable {
 	// chatrooms
 	private ArrayList<Chatroom> chatrooms;
 	private ServerFrame serverFrame;
+	private String frameRoom;
 	
 	public ServerStart(int port) throws IOException{
 		/*
@@ -31,8 +32,9 @@ public class ServerStart extends Thread implements Runnable {
 		this.serverMain = new ServerSocket(port);
 		this.allClients = new HashMap<String, String>();
 		this.activeClientList = new ArrayList<ServerClientThread>();
-		
 		this.serverFrame = new ServerFrame(this);
+		// room of the frame
+		this.frameRoom = null;
 	}
 	
 	public HashMap<String,String> getAllUsers() { return allClients; }
@@ -40,6 +42,19 @@ public class ServerStart extends Thread implements Runnable {
 	public ArrayList<ServerClientThread> getAllActiveUsers() { return activeClientList; }
 	
 	public ArrayList<Chatroom> getRooms(){ return chatrooms; }
+	
+	public void setFrameRoom(String room) { this.frameRoom = room; }
+	
+	public boolean sameRoom(String room) {
+		/*
+		 * if the client and the Frame are in the same room, we want to display a message
+		 */
+		if (frameRoom == null) { return false; }
+		if (room.contentEquals(frameRoom)) { return true; }
+		return false;
+	}
+	
+	public void sendToFrame(String message) { serverFrame.displayMessage(message); }
 	
 	public void setAllUsers(HashMap<String, String> allNewClients) {
 		this.allClients = allNewClients;
@@ -65,7 +80,10 @@ public class ServerStart extends Thread implements Runnable {
 		chatrooms.add(newRoom);
 	}
 	
-	public void writeLog(String message) { serverFrame.writeLog(message); }
+	public void writeLog(String message) { 
+		serverFrame.writeLog(message);
+		ReadAndWriteCsv.writeLog(message);
+	}
 	
 	public void sendRoomClients(String roomName) {
 		for (ServerClientThread client : activeClientList) { client.sendRooms("a", roomName); break; }
@@ -135,7 +153,7 @@ public class ServerStart extends Thread implements Runnable {
 	public void run() {
 		try {
 			// read all existing users from the csv file
-			allClients = ReadAndWriteCsv.readCsv();
+			allClients = ReadAndWriteCsv.readCsv(0);
 			// create a room called main as the default room
 			chatrooms = new ArrayList<Chatroom>();
 			Chatroom main = new Chatroom("main");
