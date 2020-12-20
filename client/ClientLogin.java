@@ -45,6 +45,7 @@ public class ClientLogin extends JFrame implements ActionListener, KeyListener {
 		this.setColor(darkScheme[0], darkScheme[1], darkScheme[2], darkScheme[3], darkScheme[4]);
 	}
 	
+	// 1. create panel
 	private void login() {
 		/*
 		 * creates label for login
@@ -79,9 +80,11 @@ public class ClientLogin extends JFrame implements ActionListener, KeyListener {
 		mainPanel.add(login, BorderLayout.SOUTH);
 	}
 	
+	// 2. basic functions
 	private void checkAndSend() {
 		/*
 		 * checks the name and password property
+		 * name and payyword may not contain '!', ' ' and ','
 		 */
 		// check if name empty
 		if (name.getText().contentEquals("")) {
@@ -99,29 +102,32 @@ public class ClientLogin extends JFrame implements ActionListener, KeyListener {
 						JOptionPane.WARNING_MESSAGE);
 			}
 			else {
-				// print name and password to the server and kills this window
-				out.println(name.getText());
-				out.println(word.getText());
-				this.dispose();
-				frame.setVisible(true);
+				if (name.getText().contains("!") | name.getText().contains(",") | name.getText().contains(" ")) {
+					JOptionPane.showMessageDialog(this,
+							"Name cannot containg ',', '!' or ' '",
+							"WARNING!!!",
+							JOptionPane.WARNING_MESSAGE);
+				}
+				else {
+					if (word.getText().contains("!") | word.getText().contains(",") | word.getText().contains(" ")) {
+						JOptionPane.showMessageDialog(this,
+								"Password cannot containg ',', '!' or ' '",
+								"WARNING!!!",
+								JOptionPane.WARNING_MESSAGE);
+					}
+					else {
+						// print name and password to the server and kills this window
+						out.println(name.getText());
+						out.println(word.getText());
+						this.dispose();
+						frame.setVisible(true);
+					}
+				}
 			}
 		}
 	}
-
-	@Override
-	public void actionPerformed(ActionEvent e) { checkAndSend(); }
-
-	@Override
-	public void keyTyped(KeyEvent e) {}
-
-	@Override
-	public void keyPressed(KeyEvent e) {
-		if (e.getKeyCode() == KeyEvent.VK_ENTER) { checkAndSend(); }
-	}
-
-	@Override
-	public void keyReleased(KeyEvent e) {}
 	
+	// 3. set color
 	public void setColor(Color background, Color label, Color textfield, Color button, Color text) {
 		mainPanel.setBackground(background);
 		
@@ -138,4 +144,19 @@ public class ClientLogin extends JFrame implements ActionListener, KeyListener {
 		login.setBackground(button);
 		login.setForeground(text);
 	}
+	
+	// 5. action and key listener
+	@Override
+	public void actionPerformed(ActionEvent e) { checkAndSend(); }
+	
+	@Override
+	public void keyPressed(KeyEvent e) {
+		if (e.getKeyCode() == KeyEvent.VK_ENTER) { checkAndSend(); }
+	}
+
+	@Override
+	public void keyTyped(KeyEvent e) {}
+
+	@Override
+	public void keyReleased(KeyEvent e) {}
 }

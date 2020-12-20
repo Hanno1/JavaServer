@@ -51,6 +51,7 @@ public class ClientFrame extends JFrame implements ActionListener, KeyListener {
 	
 	Font output = new Font("Arial", Font.BOLD + Font.ITALIC, 20);
 	
+	// 1. Constructor
 	public ClientFrame(PrintWriter printerOut) {
 		/* Constructor for the chat frame. 
 		 * We use a BorderLayout 
@@ -62,7 +63,7 @@ public class ClientFrame extends JFrame implements ActionListener, KeyListener {
 		
 		// set the layout of the frame to a Border Layout and set title
 		this.setLayout(new BorderLayout());
-		this.setTitle("The ultimate Java Chat!");
+		this.setTitle("A Java Server");
 		
 		createMenuBar();
 		
@@ -89,6 +90,7 @@ public class ClientFrame extends JFrame implements ActionListener, KeyListener {
 		this.setColor(darkScheme[0], darkScheme[1], darkScheme[2], darkScheme[3], darkScheme[4]);
 	}
 	
+	// 2. Menu Bar
 	private void createMenuBar() {
 		/*
 		 * creates and adds a menu bar to the frame
@@ -196,48 +198,45 @@ public class ClientFrame extends JFrame implements ActionListener, KeyListener {
 		this.setJMenuBar(menubar);
 	}
 	
-	private void createRightPanel() {
-		/* creates an Panel for the user to change the nickname 
-		 * and to display all online users in the chatroom
-		 * consists of an Label, a Button to commit changes
-		 * and a list for the users
+	// 3. create Panels from left to right
+	private void createRoomPanel() {
+		/*
+		 * consists of a list for all different rooms and a button to create a new room
 		 */
-		// create nickname Panel
-		changeNickname = new JLabel("Change Nickname: ");
-		nickname = new JPanel(new BorderLayout(10, 10));
-		// create insert Field
-		insertNickname = new JTextField(10);
-		insertNickname.addKeyListener(this);
-		insertNickname.setBorder(raisedetched);
-		// create Button
-		sendNickname = new JButton("Change Name");
-		// add listener
-		sendNickname.addActionListener(new ActionListener() {
+		room = new JLabel("avaiable Chatrooms:");
+		// basic panel
+		chatRooms = new JPanel(new BorderLayout(5, 10));
+		// create a list and a model
+		listModelRooms = new DefaultListModel<String>();
+		rooms = new JList<String>(listModelRooms);
+		rooms.addListSelectionListener(new ListSelectionListener() {
+            @Override
+            public void valueChanged(ListSelectionEvent e) {
+            	// if we click a different list entry we send a code to the server
+                if (e.getValueIsAdjusting()) {
+                	int index = rooms.getSelectedIndex();
+                	out.println("!roomc" + listModelRooms.get(index));
+                }
+            }
+        });
+		// create new room
+		createRoom = new JButton("create new Room!");
+		createRoom.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				if (insertNickname.getText().contentEquals("")) {}
-				else {
-					// prints a given code to the server to change the nickname
-					out.println("!nickname" + insertNickname.getText());
-					// sets the text of this input frame to null
-					insertNickname.setText(null);
-				}
+				// shows pop up window with a textfield
+				String name = JOptionPane.showInputDialog(frame, "New Chatroom name: ", "create Chatroom",
+						JOptionPane.QUESTION_MESSAGE);
+				if (name == null || name.contentEquals("")) {}
+				else { out.println("!rooma" + name); }
 			}
 		});
-		// add Panels
-		nickname.add(changeNickname, BorderLayout.NORTH);
-		nickname.add(insertNickname, BorderLayout.WEST);
-		nickname.add(sendNickname, BorderLayout.EAST);
-		// add list for all users (using JList and default Listmodel)
-		onlinePanel = new JPanel(new BorderLayout());
-		online = new JLabel("Online Users:");
-		listModelOnline = new DefaultListModel<String>();
-		onlineUsers = new JList<String>(listModelOnline);		
-		onlinePanel.add(online, BorderLayout.NORTH);
-		onlinePanel.add(onlineUsers, BorderLayout.CENTER);
-		// add nickname-Panel and list to the rightPanel
-		rightPanel.add(nickname, BorderLayout.NORTH);
-		rightPanel.add(onlinePanel, BorderLayout.CENTER);
+		// add components to the frame
+		chatRooms.add(room, BorderLayout.NORTH);
+		chatRooms.add(rooms);
+		chatRooms.add(createRoom, BorderLayout.SOUTH);
+		chatRooms.setVisible(true);
+		roomPanel.add(chatRooms, BorderLayout.CENTER);
 	}
 	
 	private void createLeftPanel() {
@@ -291,46 +290,51 @@ public class ClientFrame extends JFrame implements ActionListener, KeyListener {
 		leftPanel.add(rowPanel, BorderLayout.SOUTH);
 	}
 	
-	private void createRoomPanel() {
-		/*
-		 * consists of a list for all different rooms and a button to create a new room
+	private void createRightPanel() {
+		/* creates an Panel for the user to change the nickname 
+		 * and to display all online users in the chatroom
+		 * consists of an Label, a Button to commit changes
+		 * and a list for the users
 		 */
-		room = new JLabel("avaiable Chatrooms:");
-		// basic panel
-		chatRooms = new JPanel(new BorderLayout(5, 10));
-		// create a list and a model
-		listModelRooms = new DefaultListModel<String>();
-		rooms = new JList<String>(listModelRooms);
-		rooms.addListSelectionListener(new ListSelectionListener() {
-            @Override
-            public void valueChanged(ListSelectionEvent e) {
-            	// if we click a different list entry we send a code to the server
-                if (e.getValueIsAdjusting()) {
-                	int index = rooms.getSelectedIndex();
-                	out.println("!roomc" + listModelRooms.get(index));
-                }
-            }
-        });
-		// create new room
-		createRoom = new JButton("create new Room!");
-		createRoom.addActionListener(new ActionListener() {
+		// create nickname Panel
+		changeNickname = new JLabel("Change Nickname: ");
+		nickname = new JPanel(new BorderLayout(10, 10));
+		// create insert Field
+		insertNickname = new JTextField(10);
+		insertNickname.addKeyListener(this);
+		insertNickname.setBorder(raisedetched);
+		// create Button
+		sendNickname = new JButton("Change Name");
+		// add listener
+		sendNickname.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				// shows pop up window with a textfield
-				String name = JOptionPane.showInputDialog(frame, "New Chatroom name: ", "create Chatroom",
-						JOptionPane.QUESTION_MESSAGE);
-				if (name == null || name.contentEquals("")) {}
-				else { out.println("!rooma" + name); }
+				if (insertNickname.getText().contentEquals("")) {}
+				else {
+					// prints a given code to the server to change the nickname
+					out.println("!nickname" + insertNickname.getText());
+					// sets the text of this input frame to null
+					insertNickname.setText(null);
+				}
 			}
 		});
-		// add components to the frame
-		chatRooms.add(room, BorderLayout.NORTH);
-		chatRooms.add(rooms);
-		chatRooms.add(createRoom, BorderLayout.SOUTH);
-		chatRooms.setVisible(true);
-		roomPanel.add(chatRooms, BorderLayout.CENTER);
+		// add Panels
+		nickname.add(changeNickname, BorderLayout.NORTH);
+		nickname.add(insertNickname, BorderLayout.WEST);
+		nickname.add(sendNickname, BorderLayout.EAST);
+		// add list for all users (using JList and default Listmodel)
+		onlinePanel = new JPanel(new BorderLayout());
+		online = new JLabel("Online Users:");
+		listModelOnline = new DefaultListModel<String>();
+		onlineUsers = new JList<String>(listModelOnline);		
+		onlinePanel.add(online, BorderLayout.NORTH);
+		onlinePanel.add(onlineUsers, BorderLayout.CENTER);
+		// add nickname-Panel and list to the rightPanel
+		rightPanel.add(nickname, BorderLayout.NORTH);
+		rightPanel.add(onlinePanel, BorderLayout.CENTER);
 	}
 	
+	// 4. Writing and Displaying Functions
 	public void writeOut(String line) {
 		/*
 		 * checks server input and writes output accordingly
@@ -359,8 +363,13 @@ public class ClientFrame extends JFrame implements ActionListener, KeyListener {
 									frame.dispose();
 								}
 								else {
-									// just output the rest
-									outputPanel.append(line + "\n");
+									if (line.length() > 6 && line.substring(0, 6).contentEquals("!title")) {
+										frame.setTitle(line.substring(6));
+									}
+									else {
+										// just output the rest
+										outputPanel.append(line + "\n");
+									}
 								}
 							}
 							
@@ -463,7 +472,8 @@ public class ClientFrame extends JFrame implements ActionListener, KeyListener {
 			}
 		}
 	}
-
+	
+	// 5. Action and Keylisteners
 	@Override
 	public void actionPerformed(ActionEvent e) {}
 
@@ -498,6 +508,7 @@ public class ClientFrame extends JFrame implements ActionListener, KeyListener {
 		this.dispose();
 	}
 	
+	// 6. set color
 	private void setColor(Color menu, Color background, Color textfield, Color button, Color foreground) {
 		/*
 		 * sets color for almost every component and borders

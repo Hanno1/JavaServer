@@ -15,6 +15,7 @@ public class ReadAndWriteCsv {
 	private static String filepathLog = "C:\\Users\\hanno\\OneDrive\\Desktop\\Informatik\\Semester VII"
 			+ "\\fortgeschrittenes Programmierpraktikum\\git\\src\\serverFiles\\serverLog.csv";
 	
+	// 1. Writing
 	public static void writeCsv(String name, String password, int action) {
 		/*
 		 * here we open and write in a file which is depending on action
@@ -40,6 +41,9 @@ public class ReadAndWriteCsv {
 	}
 	
 	public static void writeLog(String line) {
+		/*
+		 * write a new line to the log file
+		 */
 		FileWriter filewriter = null;
 		String filepath = filepathLog;
 		try {
@@ -57,7 +61,11 @@ public class ReadAndWriteCsv {
 		}
 	}
 	
+	// 2. Reading
 	public static HashMap<String, String> readCsv(int action) {
+		/*
+		 * read a csv. If action is 1 we read the banned user csv. else the normal userlist
+		 */
 		String filepath = filepathUserList;
 		if (action  == 1) { filepath = filepathBannedUser; }
 		BufferedReader reader = null;
@@ -82,13 +90,16 @@ public class ReadAndWriteCsv {
 	}
 	
 	public static ArrayList<String> readLog() {
+		/*
+		 * read the log and return it as a string
+		 */
 		String filepath = filepathLog;
 		BufferedReader reader = null;
 		ArrayList<String> log = new ArrayList<String>();
 		try {
 			String line = "";
 			reader = new BufferedReader(new FileReader(filepath));
-			while ((line = reader.readLine()) != null) { System.out.println(line); log.add(line); }
+			while ((line = reader.readLine()) != null) { log.add(line); }
 		}
 		catch (Exception e) { e.printStackTrace(); }
 		finally {
@@ -98,7 +109,12 @@ public class ReadAndWriteCsv {
 		return log;
 	}
 	
+	// 3. interesting Functions
 	public static void unbanUser(String name) {
+		/*
+		 * unbans the user. this empties the entire file and then writes it again skipping
+		 * the given String name
+		 */
 		String filepath = filepathBannedUser;
 		BufferedReader reader = null;
 		HashMap<String,String> users = new HashMap<>();
