@@ -209,6 +209,7 @@ public class ClientFrame extends JFrame implements ActionListener, KeyListener {
 		// create a list and a model
 		listModelRooms = new DefaultListModel<String>();
 		rooms = new JList<String>(listModelRooms);
+		JScrollPane scrollRooms = new JScrollPane(rooms);
 		rooms.addListSelectionListener(new ListSelectionListener() {
             @Override
             public void valueChanged(ListSelectionEvent e) {
@@ -233,7 +234,7 @@ public class ClientFrame extends JFrame implements ActionListener, KeyListener {
 		});
 		// add components to the frame
 		chatRooms.add(room, BorderLayout.NORTH);
-		chatRooms.add(rooms);
+		chatRooms.add(scrollRooms);
 		chatRooms.add(createRoom, BorderLayout.SOUTH);
 		chatRooms.setVisible(true);
 		roomPanel.add(chatRooms, BorderLayout.CENTER);
@@ -326,9 +327,10 @@ public class ClientFrame extends JFrame implements ActionListener, KeyListener {
 		onlinePanel = new JPanel(new BorderLayout());
 		online = new JLabel("Online Users:");
 		listModelOnline = new DefaultListModel<String>();
-		onlineUsers = new JList<String>(listModelOnline);		
+		onlineUsers = new JList<String>(listModelOnline);	
+		JScrollPane onlineScroll = new JScrollPane(onlineUsers);
 		onlinePanel.add(online, BorderLayout.NORTH);
-		onlinePanel.add(onlineUsers, BorderLayout.CENTER);
+		onlinePanel.add(onlineScroll, BorderLayout.CENTER);
 		// add nickname-Panel and list to the rightPanel
 		rightPanel.add(nickname, BorderLayout.NORTH);
 		rightPanel.add(onlinePanel, BorderLayout.CENTER);

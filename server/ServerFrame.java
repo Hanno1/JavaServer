@@ -19,9 +19,9 @@ public class ServerFrame extends JFrame implements ActionListener, MouseListener
 	JComboBox<String> chooseTask;
 	JTextArea outputPanel;
 	JTextField taskText;
-	JPanel finalLog, rightSide, statusAndInformation, logPanel, statusPanel, informationPanel, taskPanel;
-	JLabel logTitle, setName, setOnline;
-	JButton showLog, taskButton;
+	JPanel finalLog, rightSide, logPanel, statusPanel, informationPanel, taskPanel;
+	JLabel logTitle, setName, setOnline, status;
+	JButton showLog, taskButton, change;
 	// chat window
 	JTextArea chatWindow;
 	JTextField input;
@@ -41,12 +41,15 @@ public class ServerFrame extends JFrame implements ActionListener, MouseListener
 	private String selectedUser;
 	private String selectedBan;
 	private int online;
+	// status == true -> online
+	private boolean running;
 		
 	public ServerFrame(ServerStart server) {
 		/*
 		 * constructor. Sets tabcomponent and size and stuff
 		 */
 		// in lists selected elements
+		this.running = true;
 		this.online = 1;
 		this.selectedRoom = null;
 		this.selectedUser = null;
@@ -106,13 +109,12 @@ public class ServerFrame extends JFrame implements ActionListener, MouseListener
 	// 2. Panels (log and chat)
 	private void createLogPanel() {
 		// left side (log panel with label)
-		logPanel = new JPanel(new BorderLayout());
+		logPanel = new JPanel(new BorderLayout(10, 10));
 		createServerLogPanel();
 		// create the rightpanel (status and task panels
-		rightSide = new JPanel(new BorderLayout(10, 10));
+		rightSide = new JPanel(new GridLayout(5, 1));
 		// the status and information panel will be low on the right side
 		// it will contain the status and the informations
-		statusAndInformation = new JPanel(new BorderLayout());
 		statusPanel = new JPanel(new BorderLayout());
 		createStatusPanel();
 		informationPanel = new JPanel(new BorderLayout());
@@ -121,10 +123,12 @@ public class ServerFrame extends JFrame implements ActionListener, MouseListener
 		taskPanel = new JPanel(new BorderLayout(10, 10));
 		createTaskPanel();
 		
-		statusAndInformation.add(statusPanel, BorderLayout.NORTH);
-		statusAndInformation.add(informationPanel, BorderLayout.SOUTH);
-		rightSide.add(statusAndInformation, BorderLayout.SOUTH);
-		rightSide.add(taskPanel, BorderLayout.NORTH);
+		rightSide.add(taskPanel);
+		rightSide.add(new JPanel());
+		rightSide.add(statusPanel);
+		rightSide.add(new JPanel());
+		rightSide.add(informationPanel);
+		
 		finalLog.add(rightSide, BorderLayout.EAST);
 		finalLog.add(logPanel, BorderLayout.CENTER);
 	}
@@ -182,9 +186,19 @@ public class ServerFrame extends JFrame implements ActionListener, MouseListener
 		/*
 		 * set Status of the server
 		 */
-		JLabel statusLabel = new JLabel("Serverstatus: ONLINE :)");
+		JPanel row = new JPanel(new GridLayout(1, 3));
+		JLabel statusLabel = new JLabel("Serverstatus: ");
+		status = new JLabel("Online");
+		status.setFont(status.getFont().deriveFont(14f));
+		change = new JButton("Change Status");
+		change.addActionListener(this);
+		
 		statusLabel.setFont(statusLabel.getFont().deriveFont(14f));
-		statusPanel.add(statusLabel);
+		row.add(statusLabel);
+		row.add(status);
+		row.add(change);
+		
+		statusPanel.add(row, BorderLayout.SOUTH);
 	}
 	
 	private void createInformationsPanel() {
@@ -199,35 +213,27 @@ public class ServerFrame extends JFrame implements ActionListener, MouseListener
 		} catch (UnknownHostException e) {
 			e.printStackTrace();
 		}
-		JPanel entireInfo = new JPanel(new BorderLayout());
+		JPanel entireInfo = new JPanel(new GridLayout(4, 2));
 
 		JLabel infoLabel = new JLabel("Informations: ");
 		infoLabel.setFont(infoLabel.getFont().deriveFont(14f));
 		// on the left side we display ip and numbers of online users
-		JPanel leftInfo = new JPanel(new GridLayout(2, 1));
 		JLabel idLabel = new JLabel("IP adress: ");
 		JLabel setId = new JLabel(ip.getHostAddress().toString());
 		JLabel onlineLabel = new JLabel("Online: ");
 		setOnline = new JLabel(String.valueOf(this.online));		
 		// on the right side we display the servername and if its editable
-		JPanel rightInfo = new JPanel(new GridLayout(2, 1));
 		JLabel nameLabel = new JLabel("Name: ");
 		setName = new JLabel("A Java Server");
-		JLabel editable = new JLabel("Editable: ");
-		JLabel setEdit = new JLabel("Yeah!");
 		
-		leftInfo.add(idLabel);
-		leftInfo.add(setId);
-		leftInfo.add(onlineLabel);
-		leftInfo.add(setOnline);
+		entireInfo.add(infoLabel);
+		entireInfo.add(nameLabel);
+		entireInfo.add(setName);
+		entireInfo.add(idLabel);
+		entireInfo.add(setId);
+		entireInfo.add(onlineLabel);
+		entireInfo.add(setOnline);
 		
-		rightInfo.add(nameLabel);
-		rightInfo.add(setName);
-		rightInfo.add(editable);
-		rightInfo.add(setEdit);
-
-		entireInfo.add(leftInfo, BorderLayout.WEST);
-		entireInfo.add(rightInfo,BorderLayout.EAST);
 		informationPanel.add(infoLabel, BorderLayout.NORTH);
 		informationPanel.add(entireInfo, BorderLayout.CENTER);
 	}
@@ -266,44 +272,34 @@ public class ServerFrame extends JFrame implements ActionListener, MouseListener
 		// the JList displays all users online atm
 		listModelClients = new DefaultListModel<String>();
 		clients = new JList<String>(listModelClients);
+		listModelClients.addElement("You (Admin) [-]");
+		JScrollPane scrollClients = new JScrollPane(clients);
 		clients.addListSelectionListener(new ListSelectionListener() {
             @Override
             public void valueChanged(ListSelectionEvent e) {
-            	// get selected item and display popup menu
-            	int index = clients.getSelectedIndex();
+            	// set selected item
             	selectedUser = clients.getSelectedValue();
-            	if (selectedUser == null) {}
-            	else {
-            		// display the popupmenu
-            		Point indexToLocation = clients.indexToLocation(index);
-                    Rectangle cellBounds = clients.getCellBounds(index, index);
-                    popUser.show(clients, indexToLocation.x, indexToLocation.y+cellBounds.height);
-            	}
             }
         });
-		
+		clients.addMouseListener(this);
 		JPanel roomPanel = new JPanel(new BorderLayout(5, 5));
 		roomPanel.setBorder(BorderFactory.createEmptyBorder(5,10,10,10));
 		listModelRooms = new DefaultListModel<String>();
 		rooms = new JList<String>(listModelRooms);
+		JScrollPane scrollRooms = new JScrollPane(rooms);
+		// sets selected Room
 		rooms.addListSelectionListener(new ListSelectionListener() {
             @Override
             public void valueChanged(ListSelectionEvent e) {
             	// if we click a different list entry we send a code to the server
-            	int index = rooms.getSelectedIndex();
             	selectedRoom = rooms.getSelectedValue();
+            	listModelClients.setElementAt("You (Admin) [" + selectedRoom + "]", 0);
             	// send the selected room to the server
             	// this is important to display messages in the server
             	server.setFrameRoom(selectedRoom);
-            	if (selectedRoom == null) {}
-            	else {
-            		// popup menu
-            		Point indexToLocation = rooms.indexToLocation(index);
-                    Rectangle cellBounds = rooms.getCellBounds(index, index);
-                    pop.show(rooms, indexToLocation.x, indexToLocation.y+cellBounds.height);
-            	}
             }
         });
+		rooms.addMouseListener(this);
 		JButton roomButton = new JButton("create Room");
 		roomButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -333,12 +329,12 @@ public class ServerFrame extends JFrame implements ActionListener, MouseListener
 			}
 		});
 		
-		roomPanel.add(rooms, BorderLayout.CENTER);
+		roomPanel.add(scrollRooms, BorderLayout.CENTER);
 		roomPanel.add(roomButton, BorderLayout.SOUTH);
 				
 		JTabbedPane roomTab = new JTabbedPane(JTabbedPane.TOP, JTabbedPane.SCROLL_TAB_LAYOUT);
 		roomTab.add("Rooms", roomPanel);
-		roomTab.add("Users", clients);
+		roomTab.add("Users", scrollClients);
 		// Panel with tabs and buttons to ban and show all users
 		JPanel display = new JPanel(new BorderLayout(5, 5));
 		displayAllUsers = new JButton("All Users");
@@ -426,7 +422,6 @@ public class ServerFrame extends JFrame implements ActionListener, MouseListener
 		/*
 		 * set name for new client frame
 		 */ 
-		// TODO
 		return "!title" + frame.getTitle();
 	}
 	
@@ -542,46 +537,68 @@ public class ServerFrame extends JFrame implements ActionListener, MouseListener
 	// 5. Action Listeners
 	@Override
 	public void actionPerformed(ActionEvent e) {
-		if (e.getSource() == displayAllUsers) {
-			displayAllUsers();
-		}
-		if (e.getSource() == displayBannedUsers) {
-			displayAllBannedUsers();
-		}
-		if (e.getSource() == showLog) {
-			displayLog();
-		}
-		if (e.getSource() == taskButton) {
-			// if we click on the task button the outcome depends on the selection
-			int index = chooseTask.getSelectedIndex();
-			String line = taskText.getText();
-			taskText.setText("");
-			if (index == 0) {
-				setName.setText(line);
-				this.setTitle(line);
-				server.writeLog("The Servername has been changed to " + line);
-				server.sendToAll("!title" + line);
-			}
-		}
-		if (e.getSource() == send) {
-			// send message to room there we are
-			if (selectedRoom != null) {
-				String line = "Admin: " + input.getText();
-				input.setText("");
-				// get Room
-				ArrayList<Chatroom> chatroomsServer = server.getRooms();
-				for (Chatroom room : chatroomsServer) {
-					if (room.getName().contentEquals(selectedRoom)) {
-						ArrayList<ServerClientThread> activeClients = room.getClients();
-						for (ServerClientThread user : activeClients) {
-							user.sendMessage(line);
+		Thread t = new Thread(new Runnable() {
+			@Override
+			public void run() {
+				if (e.getSource() == displayAllUsers) {
+					displayAllUsers();
+				}
+				if (e.getSource() == displayBannedUsers) {
+					displayAllBannedUsers();
+				}
+				if (e.getSource() == showLog) {
+					displayLog();
+				}
+				if (e.getSource() == taskButton) {
+					// if we click on the task button the outcome depends on the selection
+					int index = chooseTask.getSelectedIndex();
+					String line = taskText.getText();
+					taskText.setText("");
+					if (index == 0) {
+						setName.setText(line);
+						frame.setTitle(line);
+						server.writeLog("The Servername has been changed to " + line);
+						server.sendToAll("!title" + line);
+					}
+				}
+				if (e.getSource() == send) {
+					// send message to room there we are
+					if (selectedRoom != null) {
+						String line = "Admin: " + input.getText();
+						input.setText("");
+						// get Room
+						ArrayList<Chatroom> chatroomsServer = server.getRooms();
+						for (Chatroom room : chatroomsServer) {
+							if (room.getName().contentEquals(selectedRoom)) {
+								ArrayList<ServerClientThread> activeClients = room.getClients();
+								for (ServerClientThread user : activeClients) {
+									user.sendMessage(line);
+								}
+								chatWindow.append(line + "\n");
+								break;
+							}
 						}
-						chatWindow.append(line + "\n");
-						break;
+					}
+				}
+				if (e.getSource() == change) {
+					if (running) {
+						running = false;
+						ArrayList<ServerClientThread> clients = server.getAllActiveUsers();
+						for (ServerClientThread client : clients) {
+				    		try { client.close(true); } 
+				    		catch (IOException e1) { e1.printStackTrace(); }
+						}
+			    		status.setText("OFFLINE");
+						server.waitUntil();
+					}
+					else {
+						running = true;
+						server.waitUntil();
+						status.setText("ONLINE");
 					}
 				}
 			}
-		}
+		}); t.start();
 	}
 	
 	// 6. Keylisteners
@@ -600,7 +617,6 @@ public class ServerFrame extends JFrame implements ActionListener, MouseListener
 					setName.setText(line);
 					this.setTitle(line);
 					server.writeLog("The Servername has been changed to " + line);
-					
 				}
 			}
 			if (e.getSource() == input) {
@@ -689,7 +705,18 @@ public class ServerFrame extends JFrame implements ActionListener, MouseListener
 	}
 	
 	@Override
-	public void mouseClicked(MouseEvent e) {}
+	public void mouseClicked(MouseEvent e) {
+		if (e.getButton() == 1) {
+			if (e.getSource() == rooms) {
+				if (selectedRoom == null || selectedRoom == listModelRooms.firstElement()) {}
+		    	else { pop.show(rooms, e.getX(), e.getY()); }
+			}
+			if (e.getSource() == clients) {
+            	if (selectedUser == null || selectedUser == listModelClients.firstElement()) {}
+            	else { popUser.show(clients, e.getX(), e.getY()); }
+			}
+		}
+	}
 	
 	@Override
 	public void mouseReleased(MouseEvent e) {}

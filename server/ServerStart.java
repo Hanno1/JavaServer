@@ -23,6 +23,7 @@ public class ServerStart extends Thread implements Runnable {
 	private ArrayList<Chatroom> chatrooms;
 	private ServerFrame serverFrame;
 	private String frameRoom;
+	private boolean online;
 	
 	// 1. Constructor
 	public ServerStart(int port) throws IOException{
@@ -30,6 +31,7 @@ public class ServerStart extends Thread implements Runnable {
 		 * constructor just creates the server socket using the port
 		 * and initialise the lists
 		 */
+		this.online = true;
 		this.serverMain = new ServerSocket(port);
 		this.allClients = new HashMap<String, String>();
 		this.activeClientList = new ArrayList<ServerClientThread>();
@@ -219,6 +221,11 @@ public class ServerStart extends Thread implements Runnable {
 				userThread.start();
 			}
 		} catch (IOException e) { System.out.println("Fehler in run, ServerAccept Thread"); }
+	}
+	
+	public void waitUntil() {
+		if (this.online) { this.online = false; }
+		else { this.online = true; }
 	}
 
 	public static void main(String[] args) throws IOException {
