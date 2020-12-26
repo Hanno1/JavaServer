@@ -32,16 +32,15 @@ public class ClientStart extends Thread {
 				frame.writeOut(serverInput);
 			}
 			// if login failed
-			JOptionPane.showMessageDialog(frame,
-					"You were violently kicked out!",
-					"ERROR", JOptionPane.ERROR_MESSAGE);
+			JOptionPane.showMessageDialog(frame, "You were violently kicked out!",
+											"ERROR", JOptionPane.ERROR_MESSAGE);
 			// close client and destroy frame
 			frame.close();
 			client.close();
 			System.exit(0);
 		}
 		catch (IOException e) {
-			// if we cant connect to the server
+			// if we cant connect to the server or the server interups the connection
 			System.out.println("Server is not online!");
 			System.exit(0);
 		}

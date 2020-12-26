@@ -1,20 +1,24 @@
 package client;
 
 import java.awt.*;
-import java.awt.Font;
 import java.awt.event.*;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 
 import javax.swing.*;
 import javax.swing.border.*;
 import javax.swing.event.*;
 
-public class ClientFrame extends JFrame implements ActionListener, KeyListener {
+@SuppressWarnings("serial")
+public class ClientFrame extends JFrame implements ActionListener, KeyListener, MouseListener {
 	/*
 	 * creates a frame for the client
 	 * the frame consists of a left, center and right panel with diefferent containers
-	 * we mainly use a BorderLayout since Gridlayout doesnt work that well with different sizes
+	 * we main 
 	 */
+	private Color[] colorScheme;
+	private String myName;
+	ArrayList<ClientPrivateFrame> privateRooms = new ArrayList<ClientPrivateFrame>();
 	// frame (need it only for @Override functions, since 'this' doesnt work)
 	ClientFrame frame = this;
 	// given outputStream to the Server
@@ -35,9 +39,15 @@ public class ClientFrame extends JFrame implements ActionListener, KeyListener {
 	JList<String> onlineUsers, rooms;
 	DefaultListModel<String> listModelOnline, listModelRooms;
 	
+	// Popup menu
+	final JPopupMenu pop = new JPopupMenu();
+	JMenuItem seeProfil, startChat;
+	//menu
 	JMenuBar menubar;
 	JMenu languageMenu, colorTheme;
 	JCheckBoxMenuItem english, german, spanish, light, dark, blue;
+	
+	String selectedUser;
 	// color schemes. first is menu bar, second is final panel, third is textfields and list, 
 	// fourth is buttons and fifth is writing color
 	Color[] lightScheme = {new Color(0xffffff), new Color(0xcffffff), 
@@ -56,7 +66,10 @@ public class ClientFrame extends JFrame implements ActionListener, KeyListener {
 		/* Constructor for the chat frame. 
 		 * We use a BorderLayout 
 		 */
+		this.myName = null;
+		this.colorScheme = darkScheme;
 		// output stream to the server
+		this.selectedUser = null;
 		this.out = printerOut;
 		// set visibility to false unless user is logged in
 		this.setVisible(false);
@@ -66,17 +79,18 @@ public class ClientFrame extends JFrame implements ActionListener, KeyListener {
 		this.setTitle("A Java Server");
 		
 		createMenuBar();
+		createRoomPopupMenu();
 		
 		// We got one finalpanle which contains a left, right panel and room panel
 		// The panels are created via the differnet function (look there for documentation)
 		finalPanel = new JPanel(new BorderLayout(10, 10));
 		finalPanel.setBorder(BorderFactory.createEmptyBorder(5,10,10,10));
+		roomPanel = new JPanel(new BorderLayout(20, 20));
+		this.createRoomPanel();
 		leftPanel = new JPanel(new BorderLayout(20, 20));
 		this.createLeftPanel();
 		rightPanel = new JPanel(new BorderLayout(20, 20));
 		this.createRightPanel();
-		roomPanel = new JPanel(new BorderLayout(20, 20));
-		this.createRoomPanel();
 		// add components to the panel
 		finalPanel.add(roomPanel, BorderLayout.WEST);
 		finalPanel.add(leftPanel, BorderLayout.CENTER);
@@ -87,10 +101,26 @@ public class ClientFrame extends JFrame implements ActionListener, KeyListener {
 		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		this.setSize(1130, 500);
 		this.setResizable(true);
-		this.setColor(darkScheme[0], darkScheme[1], darkScheme[2], darkScheme[3], darkScheme[4]);
+		this.setColor(darkScheme);
 	}
 	
-	// 2. Menu Bar
+	public void setName(String name) { this.myName = name; }
+		
+	// 2. PopUp menu and Menu Bar
+	private void createRoomPopupMenu() {
+		/*
+		 * if you click on a room you can choose to edit or remove the room
+		 * see in the mouselisteners for more documentation
+		 */
+		seeProfil = new JMenuItem("See Profil");
+		startChat = new JMenuItem("start private Chat");
+        seeProfil.addMouseListener(this);
+        startChat.addMouseListener(this);
+        pop.add(seeProfil);
+        pop.add(startChat);
+	}
+	
+	
 	private void createMenuBar() {
 		/*
 		 * creates and adds a menu bar to the frame
@@ -173,7 +203,8 @@ public class ClientFrame extends JFrame implements ActionListener, KeyListener {
 				light.setSelected(true);
 				blue.setSelected(false);
 				dark.setSelected(false);
-				setColor(lightScheme[0], lightScheme[1], lightScheme[2], lightScheme[3], lightScheme[4]);
+				setColor(lightScheme);
+				frame.colorScheme = lightScheme;
 			}
 		});
 		blue.addActionListener(new ActionListener() {
@@ -181,7 +212,8 @@ public class ClientFrame extends JFrame implements ActionListener, KeyListener {
 				light.setSelected(false);
 				blue.setSelected(true);
 				dark.setSelected(false);
-				setColor(blueScheme[0], blueScheme[1], blueScheme[2], blueScheme[3], blueScheme[4]);
+				setColor(blueScheme);
+				frame.colorScheme = blueScheme;
 			}
 		});
 		dark.addActionListener(new ActionListener() {
@@ -189,7 +221,8 @@ public class ClientFrame extends JFrame implements ActionListener, KeyListener {
 				light.setSelected(false);
 				blue.setSelected(false);
 				dark.setSelected(true);
-				setColor(darkScheme[0], darkScheme[1], darkScheme[2], darkScheme[3], darkScheme[4]);
+				setColor(darkScheme);
+				frame.colorScheme = darkScheme;
 			}
 		});
 		
@@ -205,9 +238,10 @@ public class ClientFrame extends JFrame implements ActionListener, KeyListener {
 		 */
 		room = new JLabel("avaiable Chatrooms:");
 		// basic panel
-		chatRooms = new JPanel(new BorderLayout(5, 10));
+		chatRooms = new JPanel(new BorderLayout(5, 5));
 		// create a list and a model
 		listModelRooms = new DefaultListModel<String>();
+		listModelRooms.addElement("main");
 		rooms = new JList<String>(listModelRooms);
 		JScrollPane scrollRooms = new JScrollPane(rooms);
 		rooms.addListSelectionListener(new ListSelectionListener() {
@@ -221,22 +255,46 @@ public class ClientFrame extends JFrame implements ActionListener, KeyListener {
             }
         });
 		// create new room
-		createRoom = new JButton("create new Room!");
+		createRoom = new JButton("  create new Room!  ");
 		createRoom.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				// shows pop up window with a textfield
-				String name = JOptionPane.showInputDialog(frame, "New Chatroom name: ", "create Chatroom",
-						JOptionPane.QUESTION_MESSAGE);
-				if (name == null || name.contentEquals("")) {}
-				else { out.println("!rooma" + name); }
+				JPanel panel = new JPanel(new GridLayout(5, 1));
+				TextField inputName = new TextField(30);
+				TextField inputPassword = new TextField(30);
+				JCheckBox checkPrivate = new JCheckBox("create private Chatroom");
+				inputPassword.setEnabled(false);
+				checkPrivate.addActionListener(new ActionListener() {
+					@Override
+					public void actionPerformed(ActionEvent e) {
+						if (checkPrivate.isSelected()) { inputPassword.setEnabled(true); }
+						else { inputPassword.setEnabled(false); }
+					}
+				});
+				inputPassword.setEchoChar('*');
+				panel.add(new JLabel("Enter Chatroomname: "));
+				panel.add(inputName);
+				panel.add(new JLabel("Enter Chatroompassword: "));
+				panel.add(inputPassword);
+				panel.add(checkPrivate);
+				JOptionPane.showMessageDialog(frame, panel, "create Chatroom", JOptionPane.PLAIN_MESSAGE);
+				String name = inputName.getText();
+				String password = inputPassword.getText();
+				if (password.contentEquals("") || password == null) {
+					if (name == null || name.contentEquals("")) {}
+					else { out.println("!rooma" + name); }
+				}
+				else {
+					if (name == null || name.contentEquals("")) {}
+					else { out.println("!roomap!" + password + "!" + name); }
+				}
 			}
 		});
-		// add components to the frame
 		chatRooms.add(room, BorderLayout.NORTH);
-		chatRooms.add(scrollRooms);
+		chatRooms.add(scrollRooms, BorderLayout.CENTER);
 		chatRooms.add(createRoom, BorderLayout.SOUTH);
-		chatRooms.setVisible(true);
+		// add components to the frame
 		roomPanel.add(chatRooms, BorderLayout.CENTER);
 	}
 	
@@ -256,13 +314,13 @@ public class ClientFrame extends JFrame implements ActionListener, KeyListener {
 		JScrollPane scroll = new JScrollPane(outputPanel);
 		
 		// The row Panel should contain the insert and the button to send messages
-		rowPanel = new JPanel(new BorderLayout(20, 20));
+		rowPanel = new JPanel(new BorderLayout(30, 30));
 		// text Field insert
 		insert = new JTextField(50);
 		insert.setBorder(raisedetched);
 		insert.addKeyListener(this);
 		// Sending Button
-		sendMessage = new JButton("Send Message");
+		sendMessage = new JButton("  Send Message  ");
 		sendMessage.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
@@ -285,7 +343,6 @@ public class ClientFrame extends JFrame implements ActionListener, KeyListener {
 		rowPanel.add(insert, BorderLayout.CENTER);
 		rowPanel.add(sendMessage, BorderLayout.EAST);
 		
-		rowPanel.setVisible(true);
 		// add to Left Panel
 		leftPanel.add(scroll, BorderLayout.CENTER);
 		leftPanel.add(rowPanel, BorderLayout.SOUTH);
@@ -327,7 +384,15 @@ public class ClientFrame extends JFrame implements ActionListener, KeyListener {
 		onlinePanel = new JPanel(new BorderLayout());
 		online = new JLabel("Online Users:");
 		listModelOnline = new DefaultListModel<String>();
-		onlineUsers = new JList<String>(listModelOnline);	
+		onlineUsers = new JList<String>(listModelOnline);
+		onlineUsers.addListSelectionListener(new ListSelectionListener() {
+            @Override
+            public void valueChanged(ListSelectionEvent e) {
+            	// set selected item
+            	selectedUser = onlineUsers.getSelectedValue();
+            }
+        });
+		onlineUsers.addMouseListener(this);
 		JScrollPane onlineScroll = new JScrollPane(onlineUsers);
 		onlinePanel.add(online, BorderLayout.NORTH);
 		onlinePanel.add(onlineScroll, BorderLayout.CENTER);
@@ -345,42 +410,110 @@ public class ClientFrame extends JFrame implements ActionListener, KeyListener {
 			@Override
 			public void run() {
 				if (line.contentEquals("")) {}
-				else {
+				if (line.substring(0, 1).contentEquals("!")) {
 					// if the code is !online we update the online list (look updateOnline for doc)
 					if (line.length() > 9 && line.substring(0, 7).contentEquals("!online")) {
 						updateOnline(line);
-					}
-					else {
+					} else {
 						// if the code is !room we update the room list
 						if (line.length() > 5 && line.substring(0, 5).contentEquals("!room")) {
 							updateRooms(line);
-						}
-						else {
+						} else {
 							if (line.length() == 8 && line.contentEquals("!warning")) {
-								JOptionPane.showMessageDialog(frame, "Dont do this again",
-										"you have been warned", JOptionPane.WARNING_MESSAGE);
-							}
-							else {
+								JOptionPane.showMessageDialog(frame, "Dont do this again", "you have been warned",
+										JOptionPane.WARNING_MESSAGE);
+							} else {
 								if (line.length() == 6 && line.contentEquals("!close")) {
-									frame.dispose();
-								}
-								else {
+									close();
+								} else {
 									if (line.length() > 6 && line.substring(0, 6).contentEquals("!title")) {
 										frame.setTitle(line.substring(6));
 									}
 									else {
-										// just output the rest
-										outputPanel.append(line + "\n");
+										if (line.length() > 4 && line.substring(0, 4).contentEquals("![p]")) {
+											privateRoom(line.substring(4));
+										}
+										else {
+											if (line.length() == 2 && line.substring(0, 2).contentEquals("!p")) {
+												JPanel panel = new JPanel();
+												TextField inputPassword = new TextField(30);
+												inputPassword.setEchoChar('*');
+												panel.add(inputPassword);
+												JOptionPane.showMessageDialog(frame, panel, 
+														"enter Room Password", JOptionPane.PLAIN_MESSAGE);
+												String password = inputPassword.getText();
+												System.out.println(password);
+												out.println(password);
+											}
+											else {
+												if (line.length() > 2 && line.substring(0, 2).contentEquals("!p")) {
+													int index = Integer.valueOf(line.substring(2));
+													rooms.setSelectedIndex(index);
+													outputPanel.append("You entered the wrong Password!\n");
+												}
+												else {
+													System.out.println("Unknown Command " + line);
+												}
+											}
+										}
 									}
 								}
 							}
-							
+						}
+					}
+				}
+				 else {
+						// just output the rest
+						outputPanel.append(line + "\n");
+					}
+			}
+		});
+		t.start();
+	}
+	
+	private void privateRoom(String message) {
+		Thread t = new Thread(new Runnable() {
+			@Override
+			public void run() {
+				if (message.length() > 7 && message.substring(0, 7).contentEquals("create!")) {
+					// create and add new Frame
+					ClientPrivateFrame newPrivateChat = new ClientPrivateFrame(frame, 
+							frame.colorScheme, message.substring(7), myName, out);
+					privateRooms.add(newPrivateChat);
+				}
+				if (message.length() > 6 && message.substring(0, 6).contentEquals("close!")) {
+					// close and remove private frame
+					String otherName = message.substring(6);
+					for (ClientPrivateFrame privateFrame : privateRooms) {
+						if (privateFrame.getName().contentEquals(otherName)) {
+							privateFrame.closeWindow();
+							privateRooms.remove(privateFrame);
+							break;
+						}
+					}
+				}
+				else {
+					String name = "";
+					int index = 0;
+					for (int i = 0; i < message.length(); i++) {
+						if (message.substring(i, i+1).contentEquals("!")) { index = i; break; }
+						else { name = name + message.substring(i, i+1); }
+					}
+					for (ClientPrivateFrame privateframe : privateRooms) {
+						if (privateframe.getName().contentEquals(name)) { 
+							privateframe.writeInput(message.substring(index + 1));
 						}
 					}
 				}
 			}
-		});
-		t.start();
+		}); t.start();
+	}
+	
+	public void closePrivateRoom(ClientPrivateFrame privateFrame) {
+		/*
+		 * remove room from private room array list
+		 */
+		privateRooms.remove(privateFrame);
 	}
 	
 	private void updateOnline(String line) {
@@ -424,6 +557,8 @@ public class ClientFrame extends JFrame implements ActionListener, KeyListener {
 						for (int i = 0; i < listModelOnline.size(); i++) {
 							if (listModelOnline.getElementAt(i).contentEquals(newName[1])) {
 								listModelOnline.setElementAt(newNickname, i);
+								// we need to change the selected User as well
+								selectedUser = listModelOnline.getElementAt(i);
 								break;
 							}
 						}
@@ -474,8 +609,8 @@ public class ClientFrame extends JFrame implements ActionListener, KeyListener {
 			}
 		}
 	}
-	
-	// 5. Action and Keylisteners
+		
+	// 5. Action, Key and Mouselisteners
 	@Override
 	public void actionPerformed(ActionEvent e) {}
 
@@ -507,14 +642,85 @@ public class ClientFrame extends JFrame implements ActionListener, KeyListener {
 		/*
 		 * closes the client
 		 */
-		this.dispose();
+		System.exit(1);
 	}
 	
+	@Override
+	public void mouseClicked(MouseEvent e) {
+		// listener if online User selected. just show the popup menu
+		if (e.getSource() == onlineUsers) {
+			if (selectedUser == null) {}
+			else { pop.show(onlineUsers, e.getX(), e.getY()); }
+		}
+	}
+
+	@Override
+	public void mousePressed(MouseEvent e) {
+		// popup Menu options
+		Thread t = new Thread(new Runnable() {
+			@Override
+			public void run() {
+				if (e.getSource() == seeProfil) {
+					String name = "", nickname = "";
+					int index = 0;
+					while (index < selectedUser.length()) {
+						if (selectedUser.charAt(index) == '(') {
+							nickname = selectedUser.substring(index + 1, selectedUser.length() - 1);
+							break;
+						}
+						else { name = name + selectedUser.charAt(index); index++; }
+					}
+					JOptionPane.showMessageDialog(frame, "Name: " + name + "\nNickname: " + nickname);
+				}
+				if (e.getSource() == startChat) {
+					String name = "";
+					int index = 0;
+					// get selected name
+					while (index < selectedUser.length()) {
+						if (selectedUser.charAt(index) == '(') { break; }
+						else { name = name + selectedUser.charAt(index); index++; }
+					}
+					name = name.substring(0, name.length() - 1);
+					// check if chat already exist
+					boolean exist = false;
+					for (ClientPrivateFrame clientFrame : privateRooms) {
+						if (clientFrame.getName().contentEquals(name)) { exist = true; break; }
+					}
+					if (exist == false) {
+						if (name.contentEquals(myName)) {}
+						else {
+							out.println("![p]create!" + name);
+							ClientPrivateFrame newPrivateChat = new ClientPrivateFrame(frame, 
+									frame.colorScheme, name, myName, out);
+							privateRooms.add(newPrivateChat);
+						}
+					}
+				}
+			}
+		});
+		t.start();
+	}
+
+	@Override
+	public void mouseReleased(MouseEvent e) {}
+
+	@Override
+	public void mouseEntered(MouseEvent e) {}
+
+	@Override
+	public void mouseExited(MouseEvent e) {}
+	
 	// 6. set color
-	private void setColor(Color menu, Color background, Color textfield, Color button, Color foreground) {
+	private void setColor(Color[] scheme) {
 		/*
 		 * sets color for almost every component and borders
 		 */
+		Color menu = scheme[0];
+		Color background = scheme[1];
+		Color textfield = scheme[2];
+		Color button = scheme[3];
+		Color foreground = scheme[4];
+		
 		finalPanel.setBackground(background);
 		leftPanel.setBackground(background);
 		rowPanel.setBackground(background);

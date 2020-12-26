@@ -6,6 +6,7 @@ import java.io.PrintWriter;
 
 import javax.swing.*;
 
+@SuppressWarnings("serial")
 public class ClientLogin extends JFrame implements ActionListener, KeyListener {
 	/*
 	 * login window for the client
@@ -102,16 +103,18 @@ public class ClientLogin extends JFrame implements ActionListener, KeyListener {
 						JOptionPane.WARNING_MESSAGE);
 			}
 			else {
-				if (name.getText().contains("!") | name.getText().contains(",") | name.getText().contains(" ")) {
+				if (name.getText().contains("!") | name.getText().contains(",") | name.getText().contains(" ")
+						| name.getText().contains("(") | name.getText().contains(")")) {
 					JOptionPane.showMessageDialog(this,
-							"Name cannot containg ',', '!' or ' '",
+							"Name cannot containg ',', '!', '(', ')' or ' '",
 							"WARNING!!!",
 							JOptionPane.WARNING_MESSAGE);
 				}
 				else {
-					if (word.getText().contains("!") | word.getText().contains(",") | word.getText().contains(" ")) {
+					if (word.getText().contains("!") | word.getText().contains(",") | word.getText().contains(" ")
+							| word.getText().contains("(") | word.getText().contains(")")) {
 						JOptionPane.showMessageDialog(this,
-								"Password cannot containg ',', '!' or ' '",
+								"Password cannot containg ',', '!', '(', ')' or ' '",
 								"WARNING!!!",
 								JOptionPane.WARNING_MESSAGE);
 					}
@@ -119,6 +122,7 @@ public class ClientLogin extends JFrame implements ActionListener, KeyListener {
 						// print name and password to the server and kills this window
 						out.println(name.getText());
 						out.println(word.getText());
+						frame.setName(name.getText());
 						this.dispose();
 						frame.setVisible(true);
 					}

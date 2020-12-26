@@ -17,10 +17,12 @@ public class ServerStart extends Thread implements Runnable {
 	// 2 lists to manage the clients. one with all clients
 	// and one with the active ones
 	private HashMap<String, String> allClients;
-	// private ArrayList<ServerClientThread> allClients;
+	// List with allClients currently online
 	private ArrayList<ServerClientThread> activeClientList;
 	// chatrooms
 	private ArrayList<Chatroom> chatrooms;
+	// save private chatrooms as hashmap key = name, value = other name
+	private ArrayList<String> privateRooms;
 	private ServerFrame serverFrame;
 	private String frameRoom;
 	private boolean online;
@@ -35,6 +37,7 @@ public class ServerStart extends Thread implements Runnable {
 		this.serverMain = new ServerSocket(port);
 		this.allClients = new HashMap<String, String>();
 		this.activeClientList = new ArrayList<ServerClientThread>();
+		this.privateRooms = new ArrayList<String>();
 		this.serverFrame = new ServerFrame(this);
 		// room of the frame
 		this.frameRoom = null;
@@ -57,6 +60,34 @@ public class ServerStart extends Thread implements Runnable {
 		this.allClients = allNewClients;
 	}
 	
+	// append and remove from private room
+	public void addPrivateRoom(String user, String otherUser) {
+		privateRooms.add(user + ":" + otherUser);
+		serverFrame.addPrivateRoom(user + ":" + otherUser);
+	}
+	
+	public void removePrivateRoom(String user, String otherUser) {
+		privateRooms.remove(user + ":" + otherUser);
+		serverFrame.removePrivateRoom(user + ":" + otherUser);
+	}
+	
+	public void closePrivateConnection(String message) {
+		String oneName = "";
+		String otherName = "";
+		for (int i = 0; i < message.length(); i++) {
+			if (message.substring(i, i+1).contentEquals(":")) {
+				oneName = message.substring(0, i);
+				otherName = message.substring(i+1);
+				break;
+			}
+		}
+		String newMessage = "![p]close!";
+		for (ServerClientThread client : activeClientList) {
+			if (client.getUsername().contentEquals(oneName)) { client.sendMessage(newMessage + otherName); }
+			if (client.getUsername().contentEquals(otherName)) { client.sendMessage(newMessage + oneName); }
+		}
+	}
+	
 	// 3. Serverframe functions
 	public void setOnline(String action) { serverFrame.changeOnline(action); }
 	
@@ -67,7 +98,6 @@ public class ServerStart extends Thread implements Runnable {
 		 * returns - if existing - the user with username == name, else return null
 		 */
 		for (ServerClientThread client : activeClientList) {
-			System.out.println(name);
 			if (client.getUsername().contentEquals(name)) { return client; }
 		}
 		return null;
@@ -131,6 +161,12 @@ public class ServerStart extends Thread implements Runnable {
 		 *  create a new room
 		 */
 		Chatroom newRoom = new Chatroom(name);
+		chatrooms.add(newRoom);
+	}
+	
+	
+	public void addPasswordRoom(String roomName, String password) {
+		Chatroom newRoom = new Chatroom(roomName, password);
 		chatrooms.add(newRoom);
 	}
 	
@@ -217,8 +253,11 @@ public class ServerStart extends Thread implements Runnable {
 				Socket client = serverMain.accept();
 				System.out.println(client + " is now connected!");
 				// for every new client start a thread
-				Thread userThread = new Thread(new ServerClientThread(this, client));
-				userThread.start();
+				if (this.online) {
+					Thread userThread = new Thread(new ServerClientThread(this, client));
+					userThread.start();
+				}
+				else { client.close(); }
 			}
 		} catch (IOException e) { System.out.println("Fehler in run, ServerAccept Thread"); }
 	}

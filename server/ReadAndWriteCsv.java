@@ -109,7 +109,7 @@ public class ReadAndWriteCsv {
 		return log;
 	}
 	
-	// 3. interesting Functions
+	// 3. unbanning and clearing Functions
 	public static void unbanUser(String name) {
 		/*
 		 * unbans the user. this empties the entire file and then writes it again skipping
@@ -137,6 +137,24 @@ public class ReadAndWriteCsv {
 		finally {
 			try { reader.close(); }
 			catch (Exception e) { e.printStackTrace(); }
+		}
+	}
+	
+	public static void clear(String action) {
+		PrintWriter writer;
+		try {
+			String filepath;
+			if (action.contentEquals("log")) { filepath = filepathLog; }
+			else {
+				if (action.contentEquals("user")) { filepath = filepathUserList; }
+				else { filepath = filepathBannedUser; }
+			}
+			writer = new PrintWriter(filepath);
+			if (!action.contentEquals("log")) { writer.write("name, password\n"); }
+			writer.print("");
+			writer.close();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
 		}
 	}
 }

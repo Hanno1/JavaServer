@@ -9,6 +9,8 @@ public class Chatroom {
 	 * a list with all clients and a String 'name'
 	 */
 	private String name;
+	private String password;
+	boolean privateRoom = false;
 	
 	private ArrayList<ServerClientThread> clients;
 	
@@ -18,6 +20,17 @@ public class Chatroom {
 		 */
 		this.name = name;
 		this.clients = new ArrayList<>();
+		this.password = null;
+	}
+	
+	public Chatroom(String name, String password) {
+		/*
+		 * second constructor for chatrooms with a password needed
+		 */
+		this.name = name;
+		this.clients = new ArrayList<>();
+		this.password = password;
+		this.privateRoom = true;
 	}
 	
 	public String getName() { return name; }
@@ -25,6 +38,8 @@ public class Chatroom {
 	public void setName(String newName) { this.name = newName; }
 	
 	public ArrayList<ServerClientThread> getClients() { return clients; }
+	
+	public String getPassword() { return this.password; }
 	
 	public void sendAll(String message) {
 		/*
