@@ -23,4 +23,4 @@ chatroom class in the server and added another constructor which initialises a g
 after this i checked for a password and if the password was wrong the client didnt get access. But this resulted in a null pointer exception since the client had no 
 chatroom. After some experimentation i solved this too.
 
-This is my first real project so sorry for bad english and commenting in the files.
+This is my first real project so sorry for bad english as well as bad commenting in the files.
